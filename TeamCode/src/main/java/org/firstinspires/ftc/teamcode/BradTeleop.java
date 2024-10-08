@@ -128,8 +128,8 @@ public class BradTeleop extends LinearOpMode {
             }*/
 
 
-            boolean liftUp = gamepad1.y;
-            boolean liftDown = gamepad1.a;
+            boolean liftUp = gamepad1.dpad_up;
+            boolean liftDown = gamepad1.dpad_down;
 
             if (liftUp == true) {
                 liftArm.setPower(0.5);
@@ -148,6 +148,7 @@ public class BradTeleop extends LinearOpMode {
 
             boolean collectorInput = gamepad1.x;
             boolean collectorOutput = gamepad1.b;
+            boolean collectorStop = gamepad1.y;
 
             if (collectorInput == true){
                 collectorLeft.setPower(1.0);
@@ -156,6 +157,10 @@ public class BradTeleop extends LinearOpMode {
             else if (collectorOutput == true){
                 collectorLeft.setPower(-1.0);
                 collectorRight.setPower(1.0);
+            }
+            else if (collectorStop == true){
+                collectorLeft.setPower(0.0);
+                collectorRight.setPower(0.0);
             }
 
 
