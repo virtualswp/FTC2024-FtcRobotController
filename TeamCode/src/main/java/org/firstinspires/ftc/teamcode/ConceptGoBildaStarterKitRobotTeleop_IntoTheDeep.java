@@ -145,7 +145,7 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
         /* Define and Initialize Motors */
         leftDrive  = hardwareMap.get(DcMotor.class, "leftDrive"); //the left drivetrain motor
         rightDrive = hardwareMap.get(DcMotor.class, "rightDrive"); //the right drivetrain motor
-        armMotor   = hardwareMap.get(DcMotor.class, "leftarm"); //the arm motor
+        //armMotor   = hardwareMap.get(DcMotor.class, "leftarm"); //the arm motor
 
 
         /* Most skid-steer/differential drive robots require reversing one motor to drive forward.
@@ -175,11 +175,11 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
 
         /* Define and initialize servos.*/
         intake = hardwareMap.get(CRServo.class, "intakeServo");
-        wrist  = hardwareMap.get(Servo.class, "wrist");
+        //wrist  = hardwareMap.get(Servo.class, "wrist");
 
         /* Make sure that the intake is off, and the wrist is folded in. */
         intake.setPower(INTAKE_OFF);
-        wrist.setPosition(WRIST_FOLDED_IN);
+        //wrist.setPosition(WRIST_FOLDED_IN);
 
         /* Send telemetry message to signify robot waiting */
         telemetry.addLine("Robot Ready.");
@@ -193,7 +193,7 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
 
             /* Set the drive and turn variables to follow the joysticks on the gamepad.
             the joysticks decrease as you push them up. So reverse the Y axis. */
-            forward = -gamepad1.left_stick_y;
+            forward = gamepad1.left_stick_y;
             rotate  = gamepad1.left_stick_x;
 
 
@@ -214,14 +214,35 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
                 right /= max;
             }
 */
-            double leftPower = forward + rotate;
-            double rightPower = forward - rotate;
+            double leftPower = -forward + rotate;
+            double rightPower = -forward - rotate;
 
             /* Set the motor power to the variables we've mixed and normalized */
             leftDrive.setPower(leftPower);
             rightDrive.setPower(rightPower);
 
 
+
+            double armPower = gamepad2.right_stick_y;
+            if (armPower > 0) {
+                armMotor.setPower(-0.5);
+            }
+            else if (armPower < 0) {
+                armMotor.setPower(0.5);
+            }
+            else {
+                armMotor.setPower(0.0);
+            }
+
+            if (gamepad2.dpad_up) {
+                intake.setPower(1.0);
+            }
+            else if (gamepad2.dpad_down){
+                intake.setPower(-1.0);
+            }
+            else if (gamepad2.dpad_left){
+                intake.setPower(0.0);
+            }
 
             /* Here we handle the three buttons that have direct control of the intake speed.
             These control the continuous rotation servo that pulls elements into the robot,
@@ -237,30 +258,9 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
             three if statements, then it will set the intake servo's power to multiple speeds in
             one cycle. Which can cause strange behavior. */
 
-            if (gamepad1.a) {
-                intake.setPower(1.0);
-            }
-            else if (gamepad1.x){
-                intake.setPower(-1.0);
-            }
-            else if (gamepad1.b){
-                intake.setPower(0.0);
-            }
 
 
-
-
-            if ((gamepad1.dpad_up) || (gamepad1.dpad_down)){
-                if (gamepad1.dpad_up){
-                    armMotor.setPower(1.0);
-                } else if (gamepad1.dpad_down) {
-                    armMotor.setPower(-1.0);
-                }
-            }
-            else {
-                armMotor.setPower(0.0);
-            }
-
+            /*
             if ((gamepad1.dpad_left) || (gamepad1.dpad_right)){
                 if (gamepad1.dpad_left){
                     wrist.setPosition(WRIST_FOLDED_IN);
@@ -269,6 +269,7 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
                     wrist.setPosition(WRIST_FOLDED_OUT);
                 }
             }
+            */
 
 
             /* Here we implement a set of if else statements to set our arm to different scoring positions.

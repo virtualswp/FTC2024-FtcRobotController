@@ -29,6 +29,7 @@ package org.firstinspires.ftc.teamcode;/* Copyright (c) 2017 FIRST. All rights r
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -57,8 +58,9 @@ public class BradTeleop extends LinearOpMode {
     private DcMotor rightDrive = null;
     private DcMotor leftFront = null;
     private DcMotor rightFront = null;
-    //private DcMotor liftArm = null;
-    //private Servo gripper = null;
+    private CRServo liftArm = null;
+    private CRServo collectorLeft = null;
+    private CRServo collectorRight = null;
 
     @Override
     public void runOpMode() {
@@ -72,7 +74,11 @@ public class BradTeleop extends LinearOpMode {
         rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
         leftFront = hardwareMap.get(DcMotor.class, "left_front");
         rightFront = hardwareMap.get(DcMotor.class, "right_front");
-        //liftArm = hardwareMap.get(DcMotor.class, "liftArm");
+        liftArm = hardwareMap.get(CRServo.class, "liftarm");
+        collectorLeft = hardwareMap.get(CRServo.class, "collectorleft");
+        collectorRight = hardwareMap.get(CRServo.class, "collectorright");
+
+
         //gripper = hardwareMap.get(Servo.class, "gripperServo1");
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
@@ -81,7 +87,6 @@ public class BradTeleop extends LinearOpMode {
         leftFront.setDirection(DcMotor.Direction.REVERSE);
         rightDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFront.setDirection(DcMotor.Direction.FORWARD);
-        //liftArm.setDirection(DcMotor.Direction.FORWARD);
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -109,10 +114,23 @@ public class BradTeleop extends LinearOpMode {
             boolean leftUpStrafe = gamepad1.dpad_left;
             boolean leftDownStrafe = gamepad1.dpad_down;
 
+            boolean grab = gamepad1.x;
+            boolean unGrab = gamepad1.b;
+
+
+         /*   if (grab == true) {
+                gripper.setPosition(0.1);
+            } else if (unGrab == true) {
+                gripper.setPosition(0.75);
+            }
+            else {
+                gripper.setPosition(0.5);
+            }*/
+
+
             boolean liftUp = gamepad1.y;
             boolean liftDown = gamepad1.a;
 
-            /*
             if (liftUp == true) {
                 liftArm.setPower(0.5);
             }
@@ -127,7 +145,21 @@ public class BradTeleop extends LinearOpMode {
             {
                 liftArm.setPower(0);
             }
-            */
+
+            boolean collectorInput = gamepad1.x;
+            boolean collectorOutput = gamepad1.b;
+
+            if (collectorInput == true){
+                collectorLeft.setPower(1.0);
+                collectorRight.setPower(-1.0);
+            }
+            else if (collectorOutput == true){
+                collectorLeft.setPower(-1.0);
+                collectorRight.setPower(1.0);
+            }
+
+
+
 
             if (strafeLeft > 0) {
                 ChassisMotorValues c = new ChassisMotorValues();
