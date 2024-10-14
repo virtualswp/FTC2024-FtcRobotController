@@ -75,8 +75,8 @@ public class BradTeleop extends LinearOpMode {
         leftFront = hardwareMap.get(DcMotor.class, "left_front");
         rightFront = hardwareMap.get(DcMotor.class, "right_front");
         liftArm = hardwareMap.get(CRServo.class, "liftarm");
-        collectorLeft = hardwareMap.get(CRServo.class, "collectorleft");
-        collectorRight = hardwareMap.get(CRServo.class, "collectorright");
+        //collectorLeft = hardwareMap.get(CRServo.class, "collectorleft");
+        //collectorRight = hardwareMap.get(CRServo.class, "collectorright");
 
 
         //gripper = hardwareMap.get(Servo.class, "gripperServo1");
@@ -146,7 +146,7 @@ public class BradTeleop extends LinearOpMode {
                 liftArm.setPower(0);
             }
 
-            boolean collectorInput = gamepad1.x;
+          /*  boolean collectorInput = gamepad1.x;
             boolean collectorOutput = gamepad1.b;
             boolean collectorStop = gamepad1.y;
 
@@ -161,7 +161,7 @@ public class BradTeleop extends LinearOpMode {
             else if (collectorStop == true){
                 collectorLeft.setPower(0.0);
                 collectorRight.setPower(0.0);
-            }
+            }*/
 
 
 

@@ -74,8 +74,10 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
     public DcMotor  leftDrive   = null; //the left drivetrain motor
     public DcMotor  rightDrive  = null; //the right drivetrain motor
     public DcMotor  armMotor    = null; //the arm motor
-    public CRServo  intake      = null; //the active intake servo
-    public Servo    wrist       = null; //the wrist servo
+    //public CRServo  intake      = null; //the active intake servo
+    //public Servo    wrist       = null; //the wrist servo
+    private CRServo collectorLeft = null;
+    private CRServo collectorRight = null;
 
 
     /* This constant is the number of encoder ticks for each degree of rotation of the arm.
@@ -143,15 +145,17 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
         double wristPosition = 0.0;
 
         /* Define and Initialize Motors */
+        collectorLeft = hardwareMap.get(CRServo.class, "intakeServo1");
+        collectorRight = hardwareMap.get(CRServo.class, "intakeServo2");
         leftDrive  = hardwareMap.get(DcMotor.class, "leftDrive"); //the left drivetrain motor
         rightDrive = hardwareMap.get(DcMotor.class, "rightDrive"); //the right drivetrain motor
-        //armMotor   = hardwareMap.get(DcMotor.class, "leftarm"); //the arm motor
+        armMotor   = hardwareMap.get(DcMotor.class, "leftarm"); //the arm motor
 
 
         /* Most skid-steer/differential drive robots require reversing one motor to drive forward.
         for this robot, we reverse the right motor.*/
         leftDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightDrive.setDirection(DcMotor.Direction.FORWARD);
 
 
         /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
@@ -165,22 +169,6 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
         ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
 
 
-        /* Before starting the armMotor. We'll make sure the TargetPosition is set to 0.
-        Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
-        If you do not have the encoder plugged into this motor, it will not run in this code. */
-        //armMotor.setTargetPosition(0);
-        //armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        //armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-
-        /* Define and initialize servos.*/
-        intake = hardwareMap.get(CRServo.class, "intakeServo");
-        //wrist  = hardwareMap.get(Servo.class, "wrist");
-
-        /* Make sure that the intake is off, and the wrist is folded in. */
-        intake.setPower(INTAKE_OFF);
-        //wrist.setPosition(WRIST_FOLDED_IN);
-
         /* Send telemetry message to signify robot waiting */
         telemetry.addLine("Robot Ready.");
         telemetry.update();
@@ -191,39 +179,22 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
         /* Run until the driver presses stop */
         while (opModeIsActive()) {
 
-            /* Set the drive and turn variables to follow the joysticks on the gamepad.
-            the joysticks decrease as you push them up. So reverse the Y axis. */
-            forward = gamepad1.left_stick_y;
-            rotate  = gamepad1.left_stick_x;
+
+            double leftPower = gamepad1.left_stick_y;
+            double rightPower = gamepad1.right_stick_y;
 
 
-            /* Here we "mix" the input channels together to find the power to apply to each motor.
-            The both motors need to be set to a mix of how much you're retesting the robot move
-            forward, and how much you're requesting the robot turn. When you ask the robot to rotate
-            the right and left motors need to move in opposite directions. So we will add rotate to
-            forward for the left motor, and subtract rotate from forward for the right motor. */
+            //Backwards (Arm Forward)
+            //leftDrive.setPower(-leftPower);
+            //rightDrive.setPower(rightPower);
 
-           // left  = rotate;
-           // right = -rotate;
-
-            /* Normalize the values so neither exceed +/- 1.0 */
-            /*max = Math.max(Math.abs(left), Math.abs(right));
-            if (max > 1.0)
-            {
-                left /= max;
-                right /= max;
-            }
-*/
-            double leftPower = -forward + rotate;
-            double rightPower = -forward - rotate;
-
-            /* Set the motor power to the variables we've mixed and normalized */
-            leftDrive.setPower(leftPower);
-            rightDrive.setPower(rightPower);
+            //Reverse (Arm Backwards)
+            leftDrive.setPower(rightPower);
+            rightDrive.setPower(-leftPower);
 
 
-
-            double armPower = gamepad2.right_stick_y;
+            // Backwards (Arm Forward)
+            /*double armPower = gamepad2.right_stick_y;
             if (armPower > 0) {
                 armMotor.setPower(-0.5);
             }
@@ -232,93 +203,40 @@ public class ConceptGoBildaStarterKitRobotTeleop_IntoTheDeep extends LinearOpMod
             }
             else {
                 armMotor.setPower(0.0);
+            }*/
+
+
+            // Reverse (Arm Backwards)
+            double armPower = gamepad2.right_stick_y;
+            if (armPower > 0) {
+                armMotor.setPower(0.5);
+            }
+            else if (armPower < 0) {
+                armMotor.setPower(-0.5);
+            }
+            else {
+                armMotor.setPower(0.0);
             }
 
-            if (gamepad2.dpad_up) {
-                intake.setPower(1.0);
+
+
+            boolean collectorInput = gamepad2.x;
+            boolean collectorOutput = gamepad2.b;
+            boolean collectorStop = gamepad2.y;
+
+           if (collectorInput == true){
+                collectorLeft.setPower(1.0);
+                collectorRight.setPower(-1.0);
             }
-            else if (gamepad2.dpad_down){
-                intake.setPower(-1.0);
+            else if (collectorOutput == true){
+                collectorLeft.setPower(-1.0);
+                collectorRight.setPower(1.0);
             }
-            else if (gamepad2.dpad_left){
-                intake.setPower(0.0);
+            else if (collectorStop == true){
+                collectorLeft.setPower(0.0);
+                collectorRight.setPower(0.0);
             }
 
-            /* Here we handle the three buttons that have direct control of the intake speed.
-            These control the continuous rotation servo that pulls elements into the robot,
-            If the user presses A, it sets the intake power to the final variable that
-            holds the speed we want to collect at.
-            If the user presses X, it sets the servo to Off.
-            And if the user presses B it reveres the servo to spit out the element.*/
-
-            /* TECH TIP: If Else statements:
-            We're using an else if statement on "gamepad1.x" and "gamepad1.b" just in case
-            multiple buttons are pressed at the same time. If the driver presses both "a" and "x"
-            at the same time. "a" will win over and the intake will turn on. If we just had
-            three if statements, then it will set the intake servo's power to multiple speeds in
-            one cycle. Which can cause strange behavior. */
-
-
-
-            /*
-            if ((gamepad1.dpad_left) || (gamepad1.dpad_right)){
-                if (gamepad1.dpad_left){
-                    wrist.setPosition(WRIST_FOLDED_IN);
-                }
-                else if (gamepad1.dpad_right){
-                    wrist.setPosition(WRIST_FOLDED_OUT);
-                }
-            }
-            */
-
-
-            /* Here we implement a set of if else statements to set our arm to different scoring positions.
-            We check to see if a specific button is pressed, and then move the arm (and sometimes
-            intake and wrist) to match. For example, if we click the right bumper we want the robot
-            to start collecting. So it moves the armPosition to the ARM_COLLECT position,
-            it folds out the wrist to make sure it is in the correct orientation to intake, and it
-            turns the intake on to the COLLECT mode.*/
-
-
-
-            /* Here we create a "fudge factor" for the arm position.
-            This allows you to adjust (or "fudge") the arm position slightly with the gamepad triggers.
-            We want the left trigger to move the arm up, and right trigger to move the arm down.
-            So we add the right trigger's variable to the inverse of the left trigger. If you pull
-            both triggers an equal amount, they cancel and leave the arm at zero. But if one is larger
-            than the other, it "wins out". This variable is then multiplied by our FUDGE_FACTOR.
-            The FUDGE_FACTOR is the number of degrees that we can adjust the arm by with this function. */
-
-            //armPositionFudgeFactor = FUDGE_FACTOR * (gamepad1.right_trigger + (-gamepad1.left_trigger));
-
-
-            /* Here we set the target position of our arm to match the variable that was selected
-            by the driver.
-            We also set the target velocity (speed) the motor runs at, and use setMode to run it.*/
-            //armMotor.setTargetPosition((int) (armPosition + armPositionFudgeFactor));
-
-            //((DcMotorEx) armMotor).setVelocity(2100);
-            //armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            /* TECH TIP: Encoders, integers, and doubles
-            Encoders report when the motor has moved a specified angle. They send out pulses which
-            only occur at specific intervals (see our ARM_TICKS_PER_DEGREE). This means that the
-            position our arm is currently at can be expressed as a whole number of encoder "ticks".
-            The encoder will never report a partial number of ticks. So we can store the position in
-            an integer (or int).
-            A lot of the variables we use in FTC are doubles. These can capture fractions of whole
-            numbers. Which is great when we want our arm to move to 122.5°, or we want to set our
-            servo power to 0.5.
-
-            setTargetPosition is expecting a number of encoder ticks to drive to. Since encoder
-            ticks are always whole numbers, it expects an int. But we want to think about our
-            arm position in degrees. And we'd like to be able to set it to fractions of a degree.
-            So we make our arm positions Doubles. This allows us to precisely multiply together
-            armPosition and our armPositionFudgeFactor. But once we're done multiplying these
-            variables. We can decide which exact encoder tick we want our motor to go to. We do
-            this by "typecasting" our double, into an int. This takes our fractional double and
-            rounds it to the nearest whole number.
-            */
 
             /* Check to see if our arm is over the current limit, and report via telemetry. */
             if (((DcMotorEx) armMotor).isOverCurrent()){
