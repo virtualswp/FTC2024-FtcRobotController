@@ -30,9 +30,7 @@ package org.firstinspires.ftc.teamcode;/* Copyright (c) 2017 FIRST. All rights r
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
 
 /*
@@ -48,8 +46,8 @@ import com.qualcomm.robotcore.util.Range;
  * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
  */
 
-@TeleOp(name="Basic: Linear OpMode", group="Linear OpMode")
-public class BasicOpMode_Linear extends LinearOpMode {
+@TeleOp(name="Bob Teleop", group="Linear OpMode")
+public class BobTeleop extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
@@ -57,8 +55,14 @@ public class BasicOpMode_Linear extends LinearOpMode {
     private DcMotor rightDrive = null;
     private DcMotor leftFront = null;
     private DcMotor rightFront = null;
-    private DcMotor liftArm = null;
-    private Servo gripper = null;
+    private DcMotor collector = null;
+
+
+    // Defines the speed to run the collector at.
+    static final double collectorSpeed = 0.4;
+
+    //Defines the speed to increase the collector at.
+    static final double collectorSpeedInterval = 0.1;
 
     @Override
     public void runOpMode() {
@@ -72,8 +76,10 @@ public class BasicOpMode_Linear extends LinearOpMode {
         rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
         leftFront = hardwareMap.get(DcMotor.class, "left_front");
         rightFront = hardwareMap.get(DcMotor.class, "right_front");
-        liftArm = hardwareMap.get(DcMotor.class, "liftArm");
-        gripper = hardwareMap.get(Servo.class, "gripperServo1");
+        collector = hardwareMap.get(DcMotor.class, "collector");
+
+
+        //gripper = hardwareMap.get(Servo.class, "gripperServo1");
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
@@ -81,7 +87,7 @@ public class BasicOpMode_Linear extends LinearOpMode {
         leftFront.setDirection(DcMotor.Direction.REVERSE);
         rightDrive.setDirection(DcMotor.Direction.FORWARD);
         rightFront.setDirection(DcMotor.Direction.FORWARD);
-        liftArm.setDirection(DcMotor.Direction.FORWARD);
+        collector.setDirection(DcMotor.Direction.FORWARD);
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -109,37 +115,6 @@ public class BasicOpMode_Linear extends LinearOpMode {
             boolean leftUpStrafe = gamepad1.dpad_left;
             boolean leftDownStrafe = gamepad1.dpad_down;
 
-            boolean grab = gamepad1.x;
-            boolean unGrab = gamepad1.b;
-
-
-            if (grab == true) {
-                gripper.setPosition(0.1);
-            } else if (unGrab == true) {
-                gripper.setPosition(0.75);
-            }
-            else {
-                gripper.setPosition(0.5);
-            }
-
-
-            boolean liftUp = gamepad1.y;
-            boolean liftDown = gamepad1.a;
-
-            if (liftUp == true) {
-                liftArm.setPower(0.5);
-            }
-            else
-            {
-                liftArm.setPower(0);
-            }
-            if (liftDown == true) {
-                liftArm.setPower(-0.25);
-            }
-            else
-            {
-                liftArm.setPower(0);
-            }
 
 
             if (strafeLeft > 0) {
@@ -169,12 +144,6 @@ public class BasicOpMode_Linear extends LinearOpMode {
             else
             {
                 // Tank Mode uses one stick to control each wheel.
-
-                // - This requires no math, but it is hard to drive forward slowly and keep straight.
-                leftPower    = Range.clip(drive + turn, -1.0, 1.0) ;
-                rightPower   = Range.clip(drive - turn, -1.0, 1.0) ;
-
-
                 leftPower  = -gamepad1.left_stick_y ;
                 rightPower = -gamepad1.right_stick_y ;
 
@@ -183,6 +152,34 @@ public class BasicOpMode_Linear extends LinearOpMode {
                 leftFront.setPower(leftPower);
                 rightDrive.setPower(rightPower);
                 rightFront.setPower(rightPower);
+            }
+
+            // Collector
+            if (gamepad1.square == true){
+                collector.setPower(collectorSpeed);
+            }
+            else if (gamepad1.circle == true){
+                collector.setPower(-collectorSpeed);
+            }
+            else if (gamepad1.triangle == true){
+                collector.setPower(0.0);
+            }
+            else if (gamepad1.cross == true){
+                //Speed up / slow down
+                double currentSpeed = collector.getPower();
+
+                //Check if we are running forward or reverse
+                if (currentSpeed > 0.0)
+                {
+                    //Forward
+                    double newSpeed = currentSpeed + collectorSpeedInterval;
+                    collector.setPower(newSpeed);
+                }
+                else {
+                    //Backwards
+                    double newSpeed = currentSpeed - collectorSpeedInterval;
+                    collector.setPower(newSpeed);
+                }
             }
 
 
