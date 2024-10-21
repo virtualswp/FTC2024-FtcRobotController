@@ -27,6 +27,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
@@ -107,43 +108,13 @@ public class FreddyTeleop extends LinearOpMode {
     If you'd like it to move further, increase that number. If you'd like it to not move
     as far from the starting position, decrease it. */
 
-    final double ARM_COLLAPSED_INTO_ROBOT  = 0;
-    final double ARM_COLLECT               = 250 * ARM_TICKS_PER_DEGREE;
-    final double ARM_CLEAR_BARRIER         = 230 * ARM_TICKS_PER_DEGREE;
-    final double ARM_SCORE_SPECIMEN        = 160 * ARM_TICKS_PER_DEGREE;
-    final double ARM_SCORE_SAMPLE_IN_LOW   = 160 * ARM_TICKS_PER_DEGREE;
-    final double ARM_ATTACH_HANGING_HOOK   = 120 * ARM_TICKS_PER_DEGREE;
-    final double ARM_WINCH_ROBOT           = 15  * ARM_TICKS_PER_DEGREE;
+    //The number of ticks for the arm motor (From the gobilda website)
+    final double armMotorTicks = 5281.1;
 
-    /* Variables to store the speed the intake servo should be set at to intake, and deposit game elements. */
-    final double INTAKE_COLLECT    = -1.0;
-    final double INTAKE_OFF        =  0.0;
-    final double INTAKE_DEPOSIT    =  0.5;
-
-    /* Variables to store the positions that the wrist should be set to when folding in, or folding out. */
-    final double WRIST_FOLDED_IN   = 0.8;
-    final double WRIST_FOLDED_OUT  = 0.32;
-
-    /* A number in degrees that the triggers can adjust the arm position by */
-    final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE;
-
-    /* Variables that are used to set the arm to a specific position */
-    double armPosition = (int)ARM_COLLAPSED_INTO_ROBOT;
-    double armPositionFudgeFactor;
 
 
     @Override
     public void runOpMode() {
-        /*
-        These variables are private to the OpMode, and are used to control the drivetrain.
-         */
-        double left;
-        double right;
-        double forward;
-        double rotate;
-        double max;
-        double wristPosition = 0.0;
-
         /* Define and Initialize Motors */
         collectorLeft = hardwareMap.get(CRServo.class, "intakeServo1");
         collectorRight = hardwareMap.get(CRServo.class, "intakeServo2");
@@ -157,6 +128,7 @@ public class FreddyTeleop extends LinearOpMode {
         for this robot, we reverse the right motor.*/
         leftDrive.setDirection(DcMotor.Direction.FORWARD);
         rightDrive.setDirection(DcMotor.Direction.FORWARD);
+        armMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         slideMotor.setDirection(DcMotor.Direction.FORWARD);
 
         /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
@@ -165,9 +137,22 @@ public class FreddyTeleop extends LinearOpMode {
         leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
         ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+        ((DcMotorEx) slideMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+
+
+        //Set the arm motor's motor encoder to 0
+        armMotor.setTargetPosition(0);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        //Set the viper slide motor encode to 0
+        slideMotor.setTargetPosition(0);
+        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
 
         /* Send telemetry message to signify robot waiting */
@@ -180,77 +165,85 @@ public class FreddyTeleop extends LinearOpMode {
         /* Run until the driver presses stop */
         while (opModeIsActive()) {
 
-
+            //------------Drive---------------------
             double leftPower = gamepad1.left_stick_y;
             double rightPower = gamepad1.right_stick_y;
-
-
-            //Backwards (Arm Forward)
             leftDrive.setPower(-leftPower);
             rightDrive.setPower(rightPower);
 
-            //Reverse (Arm Backwards)
-            //leftDrive.setPower(rightPower);
-            //rightDrive.setPower(-leftPower);
+            //-----------End Drive-------------------
 
 
-            // Backwards (Arm Forward)
-            double armPower = gamepad2.right_stick_y;
-            if (armPower > 0) {
-                armMotor.setPower(-0.5);
+
+            //--------------Arm-----------------------------
+            if (gamepad2.left_bumper){
+                armMotor.setTargetPosition(1500);
+                ((DcMotorEx) armMotor).setVelocity(1000);
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                slideMotor.setTargetPosition(-5700);
+                ((DcMotorEx) slideMotor).setVelocity(2100);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
             }
-            else if (armPower < 0) {
-                armMotor.setPower(0.5);
+            else if (gamepad2.right_bumper){
+                armMotor.setTargetPosition(1500);
+                ((DcMotorEx) armMotor).setVelocity(2100);
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
             }
-            else {
-                armMotor.setPower(0.0);
+            else if (gamepad2.a){
+                armMotor.setTargetPosition(0);
+                ((DcMotorEx) armMotor).setVelocity(300);
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                slideMotor.setTargetPosition(0);
+                ((DcMotorEx) slideMotor).setVelocity(1500);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
             }
+            //---------------End Arm------------------------
 
 
-            // Reverse (Arm Backwards)
-            /*double armPower = gamepad2.right_stick_y;
-            if (armPower > 0) {
-                armMotor.setPower(0.5);
-            }
-            else if (armPower < 0) {
-                armMotor.setPower(-0.5);
-            }
-            else {
-                armMotor.setPower(0.0);
-            }*/
 
 
-            //Viper Slide
+            //---------------Viper Slide------------------
             double slidePower = gamepad2.left_stick_y;
 
-
             if (slidePower > 0) {
-                slideMotor.setPower(0.5);
+                //slideMotor.setPower(0.5);
             }
             else if (slidePower < 0) {
-                slideMotor.setPower(-0.5);
+                //slideMotor.setPower(-0.5);
             }
             else {
-                slideMotor.setPower(0.0);
+                //slideMotor.setPower(0.0);
             }
+            //-----------End Viper Slide-----------------
 
 
-            boolean collectorInput = gamepad2.x;
-            boolean collectorOutput = gamepad2.b;
-            boolean collectorStop = gamepad2.y;
 
-           if (collectorInput == true){
-                collectorLeft.setPower(1.0);
-                collectorRight.setPower(-1.0);
+            // ------------- Collector -----------------------
+            float collectorInput = gamepad2.left_trigger;
+            float collectorOutput = gamepad2.right_trigger;
+
+            if (collectorInput > 0){
+                collectorLeft.setPower((double)collectorInput);
+                collectorRight.setPower(-(double)collectorInput);
             }
-            else if (collectorOutput == true){
-                collectorLeft.setPower(-1.0);
-                collectorRight.setPower(1.0);
+            else if (collectorOutput > 0){
+                collectorLeft.setPower(-(double)collectorOutput);
+                collectorRight.setPower((double)collectorOutput);
             }
-            else if (collectorStop == true){
+            else {
                 collectorLeft.setPower(0.0);
                 collectorRight.setPower(0.0);
             }
+            //--------------End Collector----------------------
+
+
+
+
 
 
             /* Check to see if our arm is over the current limit, and report via telemetry. */
