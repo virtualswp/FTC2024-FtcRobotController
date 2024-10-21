@@ -197,10 +197,10 @@ public class FreddyTeleop extends LinearOpMode {
             // Backwards (Arm Forward)
             double armPower = gamepad2.right_stick_y;
             if (armPower > 0) {
-                armMotor.setPower(0.5);
+                armMotor.setPower(-0.5);
             }
             else if (armPower < 0) {
-                armMotor.setPower(-0.5);
+                armMotor.setPower(0.5);
             }
             else {
                 armMotor.setPower(0.0);
