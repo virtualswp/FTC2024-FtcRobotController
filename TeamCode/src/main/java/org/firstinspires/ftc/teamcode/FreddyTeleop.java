@@ -71,14 +71,16 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 public class FreddyTeleop extends LinearOpMode {
 
     /* Declare OpMode members. */
-    public DcMotor  leftDrive   = null; //the left drivetrain motor
-    public DcMotor  rightDrive  = null; //the right drivetrain motor
+    public DcMotor leftFrontDriveMotor = null; //the left drivetrain motor
+    public DcMotor rightFrontDriveMotor = null; //the right drivetrain motor
+    public DcMotor leftRearDriveMotor = null; //the left drivetrain motor
+    public DcMotor rightRearDriveMotor = null; //the right drivetrain motor
+
     public DcMotor  armMotor    = null; //the arm motor
-    //public CRServo  intake      = null; //the active intake servo
-    //public Servo    wrist       = null; //the wrist servo
+    public DcMotor  slideMotor = null;
+
     private CRServo collectorLeft = null;
     private CRServo collectorRight = null;
-    public DcMotor  slideMotor = null;
 
 
     /* This constant is the number of encoder ticks for each degree of rotation of the arm.
@@ -116,26 +118,36 @@ public class FreddyTeleop extends LinearOpMode {
     @Override
     public void runOpMode() {
         /* Define and Initialize Motors */
-        collectorLeft = hardwareMap.get(CRServo.class, "intakeServo1");
-        collectorRight = hardwareMap.get(CRServo.class, "intakeServo2");
-        leftDrive  = hardwareMap.get(DcMotor.class, "leftDrive"); //the left drivetrain motor
-        rightDrive = hardwareMap.get(DcMotor.class, "rightDrive"); //the right drivetrain motor
-        armMotor   = hardwareMap.get(DcMotor.class, "leftarm"); //the arm motor
-        slideMotor = hardwareMap.get(DcMotor.class, "slideMotor");
+        leftFrontDriveMotor = hardwareMap.get(DcMotor.class, "leftFrontDrive");          //Control Hub Motor Port 0
+        rightFrontDriveMotor = hardwareMap.get(DcMotor.class, "rightFrontDrive");        //Control Hub Motor Port 1
+        leftRearDriveMotor = hardwareMap.get(DcMotor.class, "leftRearDrive");            //Control Hub Motor Port 2
+        rightRearDriveMotor = hardwareMap.get(DcMotor.class, "rightRearDrive");          //Control Hub Motor Port 3
+
+        collectorLeft = hardwareMap.get(CRServo.class, "collectorLeft");                 //Control Hub Servo Port 0
+        collectorRight = hardwareMap.get(CRServo.class, "collectorRight");               //Control Hub Servo Port 1
+
+        armMotor   = hardwareMap.get(DcMotor.class, "arm"); //the arm motor              //Expansion Hub Motor Port 0
+        slideMotor = hardwareMap.get(DcMotor.class, "slide");                            //Expansion Hub Motor Port 1
+
 
 
         /* Most skid-steer/differential drive robots require reversing one motor to drive forward.
         for this robot, we reverse the right motor.*/
-        leftDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftFrontDriveMotor.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDriveMotor.setDirection(DcMotor.Direction.FORWARD);
+        leftRearDriveMotor.setDirection(DcMotor.Direction.FORWARD);
+        rightRearDriveMotor.setDirection(DcMotor.Direction.FORWARD);
+
         armMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         slideMotor.setDirection(DcMotor.Direction.FORWARD);
 
         /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
         much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
         stops much quicker. */
-        leftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
@@ -166,10 +178,52 @@ public class FreddyTeleop extends LinearOpMode {
         while (opModeIsActive()) {
 
             //------------Drive---------------------
-            double leftPower = gamepad1.left_stick_y;
-            double rightPower = gamepad1.right_stick_y;
-            leftDrive.setPower(-leftPower);
-            rightDrive.setPower(rightPower);
+            // Setup a variable for each drive wheel to save power level for telemetry
+            double leftPower = 0.0;
+            double rightPower = 0.0;
+
+            double drive = -gamepad1.left_stick_y;
+            double turn  =  gamepad1.right_stick_x;
+            double strafeRight = gamepad1.right_trigger;
+            double strafeLeft = gamepad1.left_trigger;
+
+            boolean rightUpStrafe = gamepad1.dpad_up;
+            boolean rightDownStrafe = gamepad1.dpad_right;
+            boolean leftUpStrafe = gamepad1.dpad_left;
+            boolean leftDownStrafe = gamepad1.dpad_down;
+
+            if (strafeLeft > 0) {
+                ChassisMotorValues c = new ChassisMotorValues();
+                c = this.strafeLeft(strafeLeft);
+
+                leftRearDriveMotor.setPower(c.leftRear);
+                leftFrontDriveMotor.setPower(c.leftFront);
+                rightRearDriveMotor.setPower(c.rightRear);
+                rightFrontDriveMotor.setPower(c.rightFront);
+            }
+            else if (strafeRight > 0) {
+                ChassisMotorValues c = new ChassisMotorValues();
+                c = this.strafeRight(strafeRight);
+                leftRearDriveMotor.setPower(c.leftRear);
+                leftFrontDriveMotor.setPower(c.leftFront);
+                rightRearDriveMotor.setPower(c.rightRear);
+                rightFrontDriveMotor.setPower(c.rightFront);
+            }
+            else if (gamepad1.left_bumper){
+                diagonalStrafe(rightUpStrafe, rightDownStrafe, leftUpStrafe, leftDownStrafe);
+            }
+            else
+            {
+                // Tank Mode uses one stick to control each wheel.
+                leftPower  = gamepad1.left_stick_y ;
+                rightPower = -gamepad1.right_stick_y ;
+
+
+                leftRearDriveMotor.setPower(leftPower);
+                leftFrontDriveMotor.setPower(leftPower);
+                rightRearDriveMotor.setPower(rightPower);
+                rightFrontDriveMotor.setPower(rightPower);
+            }
 
             //-----------End Drive-------------------
 
@@ -259,4 +313,55 @@ public class FreddyTeleop extends LinearOpMode {
 
         }
     }
+
+
+
+    public ChassisMotorValues strafeRight(double strafePower) {
+        ChassisMotorValues result = new ChassisMotorValues();
+
+        result.leftRear = -strafePower;
+        result.leftFront = strafePower;
+        result.rightRear = strafePower;
+        result.rightFront = -strafePower;
+
+        return result;
+    }
+    public ChassisMotorValues strafeLeft(double strafePower) {
+        ChassisMotorValues result = new ChassisMotorValues();
+
+        result.leftRear = strafePower;
+        result.leftFront = -strafePower;
+        result.rightRear = -strafePower;
+        result.rightFront = strafePower;
+
+        return result;
+    }
+
+    public void diagonalStrafe(boolean rightUpStrafe, boolean rightDownStrafe, boolean leftUpStrafe, boolean leftDownStrafe) {
+        if (rightUpStrafe == true)
+        {
+            leftFrontDriveMotor.setPower(0.45);
+            rightRearDriveMotor.setPower(0.45);
+        }
+        else if (rightDownStrafe == true){
+            rightFrontDriveMotor.setPower(-0.45);
+            leftRearDriveMotor.setPower(-0.45);
+        }
+        else if (leftUpStrafe == true){
+            rightFrontDriveMotor.setPower(0.45);
+            leftRearDriveMotor.setPower(0.45);
+        }
+        else if (leftDownStrafe == true){
+            leftFrontDriveMotor.setPower(-0.45);
+            rightRearDriveMotor.setPower(-0.45);
+        }
+        else {
+            leftFrontDriveMotor.setPower(0);
+            rightRearDriveMotor.setPower(0);
+            rightFrontDriveMotor.setPower(0);
+            leftRearDriveMotor.setPower(0);
+        }
+    }
+
+
 }

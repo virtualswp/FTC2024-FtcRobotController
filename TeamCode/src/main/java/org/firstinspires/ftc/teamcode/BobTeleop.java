@@ -51,11 +51,11 @@ public class BobTeleop extends LinearOpMode {
 
     // Declare OpMode members.
     private ElapsedTime runtime = new ElapsedTime();
-    private DcMotor leftDrive = null;
-    private DcMotor rightDrive = null;
-    private DcMotor leftFront = null;
-    private DcMotor rightFront = null;
-    private DcMotor collector = null;
+    private DcMotor leftRearDriveMotor = null;
+    private DcMotor rightRearDriveMotor = null;
+    private DcMotor leftFrontDriveMotor = null;
+    private DcMotor rightFrontDriveMotor = null;
+    private DcMotor collectorMotor = null;
 
 
     // Defines the speed to run the collector at.
@@ -72,22 +72,22 @@ public class BobTeleop extends LinearOpMode {
         // Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must correspond to the names assigned during the robot configuration
         // step (using the FTC Robot Controller app on the phone).
-        leftDrive  = hardwareMap.get(DcMotor.class, "left_drive");
-        rightDrive = hardwareMap.get(DcMotor.class, "right_drive");
-        leftFront = hardwareMap.get(DcMotor.class, "left_front");
-        rightFront = hardwareMap.get(DcMotor.class, "right_front");
-        collector = hardwareMap.get(DcMotor.class, "collector");
+        leftRearDriveMotor = hardwareMap.get(DcMotor.class, "left_drive");
+        rightRearDriveMotor = hardwareMap.get(DcMotor.class, "right_drive");
+        leftFrontDriveMotor = hardwareMap.get(DcMotor.class, "left_front");
+        rightFrontDriveMotor = hardwareMap.get(DcMotor.class, "right_front");
+        collectorMotor = hardwareMap.get(DcMotor.class, "collector");
 
 
         //gripper = hardwareMap.get(Servo.class, "gripperServo1");
         // To drive forward, most robots need the motor on one side to be reversed, because the axles point in opposite directions.
         // Pushing the left stick forward MUST make robot go forward. So adjust these two lines based on your first test drive.
         // Note: The settings here assume direct drive on left and right wheels.  Gear Reduction or 90 Deg drives may require direction flips
-        leftDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftFront.setDirection(DcMotor.Direction.REVERSE);
-        rightDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFront.setDirection(DcMotor.Direction.FORWARD);
-        collector.setDirection(DcMotor.Direction.FORWARD);
+        leftRearDriveMotor.setDirection(DcMotor.Direction.REVERSE);
+        leftFrontDriveMotor.setDirection(DcMotor.Direction.REVERSE);
+        rightRearDriveMotor.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDriveMotor.setDirection(DcMotor.Direction.FORWARD);
+        collectorMotor.setDirection(DcMotor.Direction.FORWARD);
 
         // Wait for the game to start (driver presses PLAY)
         waitForStart();
@@ -121,22 +121,22 @@ public class BobTeleop extends LinearOpMode {
                 ChassisMotorValues c = new ChassisMotorValues();
                 c = this.strafeLeft(strafeLeft);
 
-                leftDrive.setPower(c.leftRear);
-                leftFront.setPower(c.leftFront);
-                rightDrive.setPower(c.rightRear);
-                rightFront.setPower(c.rightFront);
+                leftRearDriveMotor.setPower(c.leftRear);
+                leftFrontDriveMotor.setPower(c.leftFront);
+                rightRearDriveMotor.setPower(c.rightRear);
+                rightFrontDriveMotor.setPower(c.rightFront);
             }
             else if (strafeRight > 0) {
                 ChassisMotorValues c = new ChassisMotorValues();
                 c = this.strafeRight(strafeRight);
 
-                leftDrive.setPower(c.leftRear);
+                leftRearDriveMotor.setPower(c.leftRear);
 
-                leftFront.setPower(c.leftFront);
+                leftFrontDriveMotor.setPower(c.leftFront);
 
-                rightDrive.setPower(c.rightRear);
+                rightRearDriveMotor.setPower(c.rightRear);
 
-                rightFront.setPower(c.rightFront);
+                rightFrontDriveMotor.setPower(c.rightFront);
             }
             else if (gamepad1.left_bumper){
                 diagonalStrafe(rightUpStrafe, rightDownStrafe, leftUpStrafe, leftDownStrafe);
@@ -148,37 +148,37 @@ public class BobTeleop extends LinearOpMode {
                 rightPower = -gamepad1.right_stick_y ;
 
 
-                leftDrive.setPower(leftPower);
-                leftFront.setPower(leftPower);
-                rightDrive.setPower(rightPower);
-                rightFront.setPower(rightPower);
+                leftRearDriveMotor.setPower(leftPower);
+                leftFrontDriveMotor.setPower(leftPower);
+                rightRearDriveMotor.setPower(rightPower);
+                rightFrontDriveMotor.setPower(rightPower);
             }
 
             // Collector
             if (gamepad1.square == true){
-                collector.setPower(collectorSpeed);
+                collectorMotor.setPower(collectorSpeed);
             }
             else if (gamepad1.circle == true){
-                collector.setPower(-collectorSpeed);
+                collectorMotor.setPower(-collectorSpeed);
             }
             else if (gamepad1.triangle == true){
-                collector.setPower(0.0);
+                collectorMotor.setPower(0.0);
             }
             else if (gamepad1.cross == true){
                 //Speed up / slow down
-                double currentSpeed = collector.getPower();
+                double currentSpeed = collectorMotor.getPower();
 
                 //Check if we are running forward or reverse
                 if (currentSpeed > 0.0)
                 {
                     //Forward
                     double newSpeed = currentSpeed + collectorSpeedInterval;
-                    collector.setPower(newSpeed);
+                    collectorMotor.setPower(newSpeed);
                 }
                 else {
                     //Backwards
                     double newSpeed = currentSpeed - collectorSpeedInterval;
-                    collector.setPower(newSpeed);
+                    collectorMotor.setPower(newSpeed);
                 }
             }
 
@@ -215,26 +215,26 @@ public class BobTeleop extends LinearOpMode {
     public void diagonalStrafe(boolean rightUpStrafe, boolean rightDownStrafe, boolean leftUpStrafe, boolean leftDownStrafe) {
         if (rightUpStrafe == true)
         {
-            leftFront.setPower(0.45);
-            rightDrive.setPower(0.45);
+            leftFrontDriveMotor.setPower(0.45);
+            rightRearDriveMotor.setPower(0.45);
         }
         else if (rightDownStrafe == true){
-            rightFront.setPower(-0.45);
-            leftDrive.setPower(-0.45);
+            rightFrontDriveMotor.setPower(-0.45);
+            leftRearDriveMotor.setPower(-0.45);
         }
         else if (leftUpStrafe == true){
-            rightFront.setPower(0.45);
-            leftDrive.setPower(0.45);
+            rightFrontDriveMotor.setPower(0.45);
+            leftRearDriveMotor.setPower(0.45);
         }
         else if (leftDownStrafe == true){
-            leftFront.setPower(-0.45);
-            rightDrive.setPower(-0.45);
+            leftFrontDriveMotor.setPower(-0.45);
+            rightRearDriveMotor.setPower(-0.45);
         }
         else {
-            leftFront.setPower(0);
-            rightDrive.setPower(0);
-            rightFront.setPower(0);
-            leftDrive.setPower(0);
+            leftFrontDriveMotor.setPower(0);
+            rightRearDriveMotor.setPower(0);
+            rightFrontDriveMotor.setPower(0);
+            leftRearDriveMotor.setPower(0);
         }
     }
 }
