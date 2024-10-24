@@ -22,6 +22,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -64,6 +65,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
  *
  * The intake wheels are powered by a goBILDA Speed Servo (2000-0025-0003) in Continuous Rotation mode.
  */
+
+
 
 
 @TeleOp(name="Freddy Teleop", group="Robot")
@@ -231,30 +234,35 @@ public class FreddyTeleop extends LinearOpMode {
 
             //--------------Arm-----------------------------
             if (gamepad2.left_bumper){
-                armMotor.setTargetPosition(1500);
+                //Lift to top basket
+                armMotor.setTargetPosition(1700);
                 ((DcMotorEx) armMotor).setVelocity(1000);
                 armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 slideMotor.setTargetPosition(-5700);
-                ((DcMotorEx) slideMotor).setVelocity(2100);
+                ((DcMotorEx) slideMotor).setVelocity(1900);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-
             }
             else if (gamepad2.right_bumper){
-                armMotor.setTargetPosition(1500);
-                ((DcMotorEx) armMotor).setVelocity(2100);
-                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                //Lift to collect position
+
+                //To Do
             }
             else if (gamepad2.a){
+                //Retract all the way
                 armMotor.setTargetPosition(0);
                 ((DcMotorEx) armMotor).setVelocity(300);
                 armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 slideMotor.setTargetPosition(0);
-                ((DcMotorEx) slideMotor).setVelocity(1500);
+                ((DcMotorEx) slideMotor).setVelocity(1200);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            }
 
+            //Resets the viper slide back to 0 if the Viper Slide is high current
+            if (gamepad2.b){
+                slideMotor.setTargetPosition(0);
+                slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             }
             //---------------End Arm------------------------
 
@@ -300,15 +308,21 @@ public class FreddyTeleop extends LinearOpMode {
 
 
 
-            /* Check to see if our arm is over the current limit, and report via telemetry. */
+            /* Check to see if our arm and slider is over the current limit, and report via telemetry. */
             if (((DcMotorEx) armMotor).isOverCurrent()){
-                telemetry.addLine("MOTOR EXCEEDED CURRENT LIMIT!");
+                telemetry.addLine("ARM MOTOR EXCEEDED CURRENT LIMIT!");
+            }
+
+            if (((DcMotorEx) slideMotor).isOverCurrent()){
+                telemetry.addLine("SLIDE MOTOR EXCEEDED CURRENT LIMIT!");
             }
 
 
             /* send telemetry to the driver of the arm's current position and target position */
-            telemetry.addData("armTarget: ", armMotor.getTargetPosition());
-            telemetry.addData("arm Encoder: ", armMotor.getCurrentPosition());
+            telemetry.addData("Arm Target: ", armMotor.getTargetPosition());
+            telemetry.addData("Arm Encoder: ", armMotor.getCurrentPosition());
+            telemetry.addData("Slide Target: ", slideMotor.getTargetPosition());
+            telemetry.addData("Slide Encoder: ", slideMotor.getCurrentPosition());
             telemetry.update();
 
         }
@@ -319,20 +333,20 @@ public class FreddyTeleop extends LinearOpMode {
     public ChassisMotorValues strafeRight(double strafePower) {
         ChassisMotorValues result = new ChassisMotorValues();
 
-        result.leftRear = -strafePower;
-        result.leftFront = strafePower;
-        result.rightRear = strafePower;
-        result.rightFront = -strafePower;
+        result.leftFront = -strafePower;    //Should move forwards
+        result.rightFront = -strafePower;    //Should move backwards
+        result.leftRear = strafePower;     //Should move backwards
+        result.rightRear = strafePower;     //Should move forwards
 
         return result;
     }
     public ChassisMotorValues strafeLeft(double strafePower) {
         ChassisMotorValues result = new ChassisMotorValues();
 
-        result.leftRear = strafePower;
-        result.leftFront = -strafePower;
-        result.rightRear = -strafePower;
-        result.rightFront = strafePower;
+        result.leftFront = strafePower;    //Should move backwards
+        result.rightFront = strafePower;    //Should move forwards
+        result.leftRear = -strafePower;     //Should move forwards
+        result.rightRear = -strafePower;     //Should move backwards
 
         return result;
     }
