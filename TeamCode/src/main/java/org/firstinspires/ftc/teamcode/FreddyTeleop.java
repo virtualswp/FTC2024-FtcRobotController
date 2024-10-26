@@ -85,6 +85,20 @@ public class FreddyTeleop extends LinearOpMode {
     private CRServo collectorLeft = null;
     private CRServo collectorRight = null;
 
+    // Member variables
+    private armPosition currentArmPosition = armPosition.retracted;         //The current arm position
+
+
+    //Enumerations
+    private enum armPosition {
+        retracted,
+        collectUp,
+        collectDown,
+        highBasket
+    }
+
+
+
 
     /* This constant is the number of encoder ticks for each degree of rotation of the arm.
     To find this, we first need to consider the total gear reduction powering our arm.
@@ -232,23 +246,45 @@ public class FreddyTeleop extends LinearOpMode {
 
 
 
-            //--------------Arm-----------------------------
-            if (gamepad2.left_bumper){
+            //--------------Arm / Slide-----------------------------
+            if (gamepad2.x){
                 //Lift to top basket
+
                 armMotor.setTargetPosition(1700);
-                ((DcMotorEx) armMotor).setVelocity(1000);
+                ((DcMotorEx) armMotor).setVelocity(700);
                 armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 slideMotor.setTargetPosition(-5700);
+                ((DcMotorEx) slideMotor).setVelocity(2000);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                this.currentArmPosition = armPosition.highBasket;
+            }
+            else if (gamepad2.y) {
+                //Lift to collect up position
+                armMotor.setTargetPosition(550);
+                ((DcMotorEx) armMotor).setVelocity(500);
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                slideMotor.setTargetPosition(-2500);
+                ((DcMotorEx) slideMotor).setVelocity(1200);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                this.currentArmPosition = armPosition.collectUp;
+            }
+            else if (gamepad2.a) {
+                //Lift to collect down position
+                armMotor.setTargetPosition(0);
+                ((DcMotorEx) armMotor).setVelocity(500);
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                slideMotor.setTargetPosition(-2500);
                 ((DcMotorEx) slideMotor).setVelocity(1900);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                this.currentArmPosition = armPosition.collectDown;
             }
             else if (gamepad2.right_bumper){
-                //Lift to collect position
-
-                //To Do
-            }
-            else if (gamepad2.a){
                 //Retract all the way
                 armMotor.setTargetPosition(0);
                 ((DcMotorEx) armMotor).setVelocity(300);
@@ -257,12 +293,16 @@ public class FreddyTeleop extends LinearOpMode {
                 slideMotor.setTargetPosition(0);
                 ((DcMotorEx) slideMotor).setVelocity(1200);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                this.currentArmPosition = armPosition.retracted;
             }
 
             //Resets the viper slide back to 0 if the Viper Slide is high current
             if (gamepad2.b){
                 slideMotor.setTargetPosition(0);
                 slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+                this.currentArmPosition = armPosition.retracted;
             }
             //---------------End Arm------------------------
 
@@ -323,6 +363,7 @@ public class FreddyTeleop extends LinearOpMode {
             telemetry.addData("Arm Encoder: ", armMotor.getCurrentPosition());
             telemetry.addData("Slide Target: ", slideMotor.getTargetPosition());
             telemetry.addData("Slide Encoder: ", slideMotor.getCurrentPosition());
+            telemetry.addData("Arm Position", this.currentArmPosition);
             telemetry.update();
 
         }
