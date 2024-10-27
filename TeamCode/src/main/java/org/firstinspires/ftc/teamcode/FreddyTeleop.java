@@ -29,6 +29,8 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
@@ -73,7 +75,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 //@Disabled
 public class FreddyTeleop extends LinearOpMode {
 
-    /* Declare OpMode members. */
+    /* Declare hardware variables */
     public DcMotor leftFrontDriveMotor = null; //the left drivetrain motor
     public DcMotor rightFrontDriveMotor = null; //the right drivetrain motor
     public DcMotor leftRearDriveMotor = null; //the left drivetrain motor
@@ -85,8 +87,13 @@ public class FreddyTeleop extends LinearOpMode {
     private CRServo collectorLeft = null;
     private CRServo collectorRight = null;
 
+    private TouchSensor slideButton = null;      // The Viper Slide button at the top of the clip
+
+
     // Member variables
     private armPosition currentArmPosition = armPosition.retracted;         //The current arm position
+    private boolean waitingForSlideReset = false;                           //Variable to determine if the slide is neeing to be reset and touch the button.
+    private boolean isInCollectorMode = false;                              //If the robot has the arm up ready to collect in collector mode.
 
 
     //Enumerations
@@ -146,6 +153,7 @@ public class FreddyTeleop extends LinearOpMode {
         armMotor   = hardwareMap.get(DcMotor.class, "arm"); //the arm motor              //Expansion Hub Motor Port 0
         slideMotor = hardwareMap.get(DcMotor.class, "slide");                            //Expansion Hub Motor Port 1
 
+        slideButton = hardwareMap.get(TouchSensor.class, "slideButton");              //Expansion Hub Sensor Port 0
 
 
         /* Most skid-steer/differential drive robots require reversing one motor to drive forward.
@@ -209,6 +217,17 @@ public class FreddyTeleop extends LinearOpMode {
             boolean leftUpStrafe = gamepad1.dpad_left;
             boolean leftDownStrafe = gamepad1.dpad_down;
 
+            boolean collectorModeDisable = gamepad1.y;
+            boolean collectorModeEnable = gamepad1.a;
+
+            if (collectorModeDisable == true){
+                this.isInCollectorMode = false;
+            }
+            else if (collectorModeEnable == true){
+                this.isInCollectorMode = true;
+            }
+
+
             if (strafeLeft > 0) {
                 ChassisMotorValues c = new ChassisMotorValues();
                 c = this.strafeLeft(strafeLeft);
@@ -232,8 +251,16 @@ public class FreddyTeleop extends LinearOpMode {
             else
             {
                 // Tank Mode uses one stick to control each wheel.
-                leftPower  = gamepad1.left_stick_y ;
-                rightPower = -gamepad1.right_stick_y ;
+                if (isInCollectorMode == true){
+                    float collectorModeFactor = 0.7F;
+                    leftPower  = gamepad1.left_stick_y * collectorModeFactor;
+                    rightPower = -gamepad1.right_stick_y * collectorModeFactor;
+                }
+                else {
+                    leftPower  = gamepad1.left_stick_y ;
+                    rightPower = -gamepad1.right_stick_y ;
+                }
+
 
 
                 leftRearDriveMotor.setPower(leftPower);
@@ -270,7 +297,10 @@ public class FreddyTeleop extends LinearOpMode {
                 ((DcMotorEx) slideMotor).setVelocity(1200);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
+
+                this.isInCollectorMode = true;
                 this.currentArmPosition = armPosition.collectUp;
+
             }
             else if (gamepad2.a) {
                 //Lift to collect down position
@@ -282,6 +312,7 @@ public class FreddyTeleop extends LinearOpMode {
                 ((DcMotorEx) slideMotor).setVelocity(1900);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
+                this.isInCollectorMode = true;
                 this.currentArmPosition = armPosition.collectDown;
             }
             else if (gamepad2.right_bumper){
@@ -295,6 +326,8 @@ public class FreddyTeleop extends LinearOpMode {
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 this.currentArmPosition = armPosition.retracted;
+
+                this.waitingForSlideReset = true;
             }
 
             //Resets the viper slide back to 0 if the Viper Slide is high current
@@ -344,6 +377,30 @@ public class FreddyTeleop extends LinearOpMode {
             //--------------End Collector----------------------
 
 
+            // ------------------ Sensors -----------------------
+            if (this.waitingForSlideReset == true)
+            {
+                if (slideButton.isPressed() == true)
+                {
+                    slideMotor.setPower(0);
+                    slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                    slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    slideMotor.setTargetPosition(0);
+
+                    this.waitingForSlideReset = false;
+                }
+            }
+
+            if (slideButton.isPressed() == true)
+            {
+                telemetry.addData("Side Sensor Button", "Pressed");
+            }
+            else{
+                telemetry.addData("Side Sensor Button", "Not Pressed");
+            }
+
+
+            //-----------------End Sensors -----------------------
 
 
 
@@ -396,19 +453,19 @@ public class FreddyTeleop extends LinearOpMode {
         if (rightUpStrafe == true)
         {
             leftFrontDriveMotor.setPower(0.45);
-            rightRearDriveMotor.setPower(0.45);
+            rightRearDriveMotor.setPower(-0.45);
         }
         else if (rightDownStrafe == true){
             rightFrontDriveMotor.setPower(-0.45);
-            leftRearDriveMotor.setPower(-0.45);
+            leftRearDriveMotor.setPower(0.45);
         }
         else if (leftUpStrafe == true){
             rightFrontDriveMotor.setPower(0.45);
-            leftRearDriveMotor.setPower(0.45);
+            leftRearDriveMotor.setPower(-0.45);
         }
         else if (leftDownStrafe == true){
             leftFrontDriveMotor.setPower(-0.45);
-            rightRearDriveMotor.setPower(-0.45);
+            rightRearDriveMotor.setPower(0.45);
         }
         else {
             leftFrontDriveMotor.setPower(0);
