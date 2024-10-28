@@ -31,6 +31,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+import java.lang.Math;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
@@ -92,8 +93,9 @@ public class FreddyTeleop extends LinearOpMode {
 
     // Member variables
     private armPosition currentArmPosition = armPosition.retracted;         //The current arm position
+    private driveMode currentDriveMode = driveMode.collection;              //The current drive mode
     private boolean waitingForSlideReset = false;                           //Variable to determine if the slide is neeing to be reset and touch the button.
-    private boolean isInCollectorMode = false;                              //If the robot has the arm up ready to collect in collector mode.
+
 
 
     //Enumerations
@@ -104,7 +106,10 @@ public class FreddyTeleop extends LinearOpMode {
         highBasket
     }
 
-
+    private enum driveMode {
+        normal,
+        collection
+    }
 
 
     /* This constant is the number of encoder ticks for each degree of rotation of the arm.
@@ -221,10 +226,10 @@ public class FreddyTeleop extends LinearOpMode {
             boolean collectorModeEnable = gamepad1.a;
 
             if (collectorModeDisable == true){
-                this.isInCollectorMode = false;
+                this.currentDriveMode = driveMode.normal;
             }
             else if (collectorModeEnable == true){
-                this.isInCollectorMode = true;
+                this.currentDriveMode = driveMode.collection;
             }
 
 
@@ -251,12 +256,14 @@ public class FreddyTeleop extends LinearOpMode {
             else
             {
                 // Tank Mode uses one stick to control each wheel.
-                if (isInCollectorMode == true){
+                if (this.currentDriveMode == driveMode.collection){
+                    // Collect drive mode (slow down)
                     float collectorModeFactor = 0.7F;
                     leftPower  = gamepad1.left_stick_y * collectorModeFactor;
                     rightPower = -gamepad1.right_stick_y * collectorModeFactor;
                 }
                 else {
+                    // Normal Drive mode (full speed)
                     leftPower  = gamepad1.left_stick_y ;
                     rightPower = -gamepad1.right_stick_y ;
                 }
@@ -289,16 +296,14 @@ public class FreddyTeleop extends LinearOpMode {
             }
             else if (gamepad2.y) {
                 //Lift to collect up position
-                armMotor.setTargetPosition(550);
-                ((DcMotorEx) armMotor).setVelocity(500);
+                armMotor.setTargetPosition(500);
+                ((DcMotorEx) armMotor).setVelocity(800);
                 armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 slideMotor.setTargetPosition(-2500);
                 ((DcMotorEx) slideMotor).setVelocity(1200);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-
-                this.isInCollectorMode = true;
                 this.currentArmPosition = armPosition.collectUp;
 
             }
@@ -312,7 +317,6 @@ public class FreddyTeleop extends LinearOpMode {
                 ((DcMotorEx) slideMotor).setVelocity(1900);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-                this.isInCollectorMode = true;
                 this.currentArmPosition = armPosition.collectDown;
             }
             else if (gamepad2.right_bumper){
@@ -330,30 +334,13 @@ public class FreddyTeleop extends LinearOpMode {
                 this.waitingForSlideReset = true;
             }
 
-            //Resets the viper slide back to 0 if the Viper Slide is high current
-            if (gamepad2.b){
-                slideMotor.setTargetPosition(0);
-                slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-                this.currentArmPosition = armPosition.retracted;
-            }
             //---------------End Arm------------------------
 
 
 
 
             //---------------Viper Slide------------------
-            double slidePower = gamepad2.left_stick_y;
 
-            if (slidePower > 0) {
-                //slideMotor.setPower(0.5);
-            }
-            else if (slidePower < 0) {
-                //slideMotor.setPower(-0.5);
-            }
-            else {
-                //slideMotor.setPower(0.0);
-            }
             //-----------End Viper Slide-----------------
 
 
@@ -377,10 +364,14 @@ public class FreddyTeleop extends LinearOpMode {
             //--------------End Collector----------------------
 
 
+
+
             // ------------------ Sensors -----------------------
+            boolean slideButtonPressed = slideButton.isPressed();
+
             if (this.waitingForSlideReset == true)
             {
-                if (slideButton.isPressed() == true)
+                if (slideButtonPressed == true)
                 {
                     slideMotor.setPower(0);
                     slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -390,17 +381,10 @@ public class FreddyTeleop extends LinearOpMode {
                     this.waitingForSlideReset = false;
                 }
             }
-
-            if (slideButton.isPressed() == true)
-            {
-                telemetry.addData("Side Sensor Button", "Pressed");
-            }
-            else{
-                telemetry.addData("Side Sensor Button", "Not Pressed");
-            }
-
-
             //-----------------End Sensors -----------------------
+
+
+
 
 
 
@@ -421,11 +405,26 @@ public class FreddyTeleop extends LinearOpMode {
             telemetry.addData("Slide Target: ", slideMotor.getTargetPosition());
             telemetry.addData("Slide Encoder: ", slideMotor.getCurrentPosition());
             telemetry.addData("Arm Position", this.currentArmPosition);
+            telemetry.addData("Side Sensor Button Pressed", slideButtonPressed);
             telemetry.update();
 
         }
     }
 
+    public boolean isMotorAtPosition(DcMotor motor)
+    {
+        int varianceFactor = 5;
+        int currentMotorPosition = motor.getCurrentPosition();
+        int targetMotorPosition = motor.getTargetPosition();
+
+        int distanceFromTarget = Math.abs(targetMotorPosition - currentMotorPosition);
+
+        if (distanceFromTarget <= varianceFactor)
+            return true;
+        else {
+            return false;
+        }
+    }
 
 
     public ChassisMotorValues strafeRight(double strafePower) {
