@@ -195,7 +195,7 @@ public class FreddyTeleop extends LinearOpMode {
             case highBasket:
                 //First move the slide in
                 slideMotor.setTargetPosition(-2500);
-                ((DcMotorEx) slideMotor).setVelocity(500);
+                ((DcMotorEx) slideMotor).setVelocity(1700);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 if (this.isMotorAtPosition(slideMotor)){
@@ -265,7 +265,7 @@ public class FreddyTeleop extends LinearOpMode {
             switch (this.currentArmPosition){
                 case highBasket:
                     //Move down more slowly if coming from the high basket
-                    armMotor.setTargetPosition(0);
+                    armMotor.setTargetPosition(200);
                     ((DcMotorEx) armMotor).setVelocity(500);
                     armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
@@ -279,8 +279,8 @@ public class FreddyTeleop extends LinearOpMode {
                     break;
                 default:
                     //Move down quickly if moving from collect up, or retract
-                    armMotor.setTargetPosition(0);
-                    ((DcMotorEx) armMotor).setVelocity(1000);
+                    armMotor.setTargetPosition(200);
+                    ((DcMotorEx) armMotor).setVelocity(700);
                     armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     break;
             }
@@ -389,7 +389,7 @@ public class FreddyTeleop extends LinearOpMode {
                 break;
             case 1:     //Next move the slide out all the way
                 slideMotor.setTargetPosition(-5700);
-                ((DcMotorEx) slideMotor).setVelocity(700);
+                ((DcMotorEx) slideMotor).setVelocity(1200);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 if (this.isMotorAtPosition(slideMotor)){
