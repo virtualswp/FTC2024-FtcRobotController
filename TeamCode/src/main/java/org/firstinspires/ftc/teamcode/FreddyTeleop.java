@@ -118,60 +118,8 @@ public class FreddyTeleop extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        /* Define and Initialize Motors */
-        leftFrontDriveMotor = hardwareMap.get(DcMotor.class, "leftFrontDrive");          //Control Hub Motor Port 0
-        rightFrontDriveMotor = hardwareMap.get(DcMotor.class, "rightFrontDrive");        //Control Hub Motor Port 1
-        leftRearDriveMotor = hardwareMap.get(DcMotor.class, "leftRearDrive");            //Control Hub Motor Port 2
-        rightRearDriveMotor = hardwareMap.get(DcMotor.class, "rightRearDrive");          //Control Hub Motor Port 3
-
-        collectorLeft = hardwareMap.get(CRServo.class, "collectorLeft");                 //Control Hub Servo Port 0
-        collectorRight = hardwareMap.get(CRServo.class, "collectorRight");               //Control Hub Servo Port 1
-
-        armMotor   = hardwareMap.get(DcMotor.class, "arm"); //the arm motor              //Expansion Hub Motor Port 0
-        slideMotor = hardwareMap.get(DcMotor.class, "slide");                            //Expansion Hub Motor Port 1
-
-        slideButton = hardwareMap.get(TouchSensor.class, "slideButton");              //Expansion Hub Sensor Port 0
-
-
-        /* Most skid-steer/differential drive robots require reversing one motor to drive forward.
-        for this robot, we reverse the right motor.*/
-        leftFrontDriveMotor.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDriveMotor.setDirection(DcMotor.Direction.FORWARD);
-        leftRearDriveMotor.setDirection(DcMotor.Direction.FORWARD);
-        rightRearDriveMotor.setDirection(DcMotor.Direction.FORWARD);
-
-        armMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        slideMotor.setDirection(DcMotor.Direction.FORWARD);
-
-        /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
-        much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
-        stops much quicker. */
-        leftFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
-        ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
-        ((DcMotorEx) slideMotor).setCurrentAlert(5,CurrentUnit.AMPS);
-
-
-        //Set the arm motor's motor encoder to 0
-        armMotor.setTargetPosition(0);
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        //Set the viper slide motor encode to 0
-        slideMotor.setTargetPosition(0);
-        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-
-        /* Send telemetry message to signify robot waiting */
-        telemetry.addLine("Robot Ready.");
-        telemetry.update();
+        //Configure the hardware
+        this.ConfigureHardware();
 
         /* Wait for the game driver to press play */
         waitForStart();
@@ -643,6 +591,63 @@ public class FreddyTeleop extends LinearOpMode {
         telemetry.addData("Slide Target: ", slideMotor.getTargetPosition());
         telemetry.addData("Slide Encoder: ", slideMotor.getCurrentPosition());
         telemetry.addData("Arm Position", this.currentArmPosition);
+        telemetry.update();
+    }
+
+    private void ConfigureHardware(){
+        /* Define and Initialize Motors */
+        leftFrontDriveMotor = hardwareMap.get(DcMotor.class, "leftFrontDrive");          //Control Hub Motor Port 0
+        rightFrontDriveMotor = hardwareMap.get(DcMotor.class, "rightFrontDrive");        //Control Hub Motor Port 1
+        leftRearDriveMotor = hardwareMap.get(DcMotor.class, "leftRearDrive");            //Control Hub Motor Port 2
+        rightRearDriveMotor = hardwareMap.get(DcMotor.class, "rightRearDrive");          //Control Hub Motor Port 3
+
+        collectorLeft = hardwareMap.get(CRServo.class, "collectorLeft");                 //Control Hub Servo Port 0
+        collectorRight = hardwareMap.get(CRServo.class, "collectorRight");               //Control Hub Servo Port 1
+
+        armMotor   = hardwareMap.get(DcMotor.class, "arm"); //the arm motor              //Expansion Hub Motor Port 0
+        slideMotor = hardwareMap.get(DcMotor.class, "slide");                            //Expansion Hub Motor Port 1
+
+        slideButton = hardwareMap.get(TouchSensor.class, "slideButton");              //Expansion Hub Sensor Port 0
+
+
+        /* Most skid-steer/differential drive robots require reversing one motor to drive forward.
+        for this robot, we reverse the right motor.*/
+        leftFrontDriveMotor.setDirection(DcMotor.Direction.FORWARD);
+        rightFrontDriveMotor.setDirection(DcMotor.Direction.FORWARD);
+        leftRearDriveMotor.setDirection(DcMotor.Direction.FORWARD);
+        rightRearDriveMotor.setDirection(DcMotor.Direction.FORWARD);
+
+        armMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        slideMotor.setDirection(DcMotor.Direction.FORWARD);
+
+        /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
+        much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
+        stops much quicker. */
+        leftFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
+        ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+        ((DcMotorEx) slideMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+
+
+        //Set the arm motor's motor encoder to 0
+        armMotor.setTargetPosition(0);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        //Set the viper slide motor encode to 0
+        slideMotor.setTargetPosition(0);
+        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
+        /* Send telemetry message to signify robot waiting */
+        telemetry.addLine("Robot Ready.");
         telemetry.update();
     }
 
