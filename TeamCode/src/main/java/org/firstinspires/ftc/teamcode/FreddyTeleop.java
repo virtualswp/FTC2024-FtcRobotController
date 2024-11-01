@@ -110,7 +110,8 @@ public class FreddyTeleop extends LinearOpMode {
 
     private enum driveMode {
         normal,
-        collection
+        collection,
+        deposit
     }
 
 
@@ -137,6 +138,9 @@ public class FreddyTeleop extends LinearOpMode {
 
     private void MoveArmToCollectPosition(){
         //Lift to collect up position
+
+        //Set the drive speed to deposit
+        this.currentDriveMode = driveMode.collection;
 
         //Determine the current position
         switch (this.currentArmPosition){
@@ -324,6 +328,9 @@ public class FreddyTeleop extends LinearOpMode {
 
 
     private void MoveArmToHighBasketPosition(){
+        //Set the drive speed to deposit
+        this.currentDriveMode = driveMode.deposit;
+
         switch (basketArmMoveStep){
             case 0:     //First move the arm up 1/2 way
                 armMotor.setTargetPosition(750);
@@ -360,6 +367,9 @@ public class FreddyTeleop extends LinearOpMode {
     }
 
     private void MoveArmToLowBasketPosition(){
+        //Set the drive speed to deposit
+        this.currentDriveMode = driveMode.deposit;
+
         switch (basketArmMoveStep){
             case 0:     //First move the arm up 1/2 way
                 armMotor.setTargetPosition(1300);
@@ -427,7 +437,8 @@ public class FreddyTeleop extends LinearOpMode {
         boolean leftDownStrafe = gamepad1.dpad_down;
 
         boolean collectorModeDisable = gamepad1.y;
-        boolean collectorModeEnable = gamepad1.a;
+        boolean collectorModeEnable = gamepad1.b;
+        boolean depositModeEnable = gamepad1.a;
 
         if (collectorModeDisable == true){
             this.currentDriveMode = driveMode.normal;
@@ -435,24 +446,66 @@ public class FreddyTeleop extends LinearOpMode {
         else if (collectorModeEnable == true){
             this.currentDriveMode = driveMode.collection;
         }
+        else if (depositModeEnable == true){
+            this.currentDriveMode = driveMode.deposit;
+        }
 
 
         if (strafeLeft > 0) {
             ChassisMotorValues c = new ChassisMotorValues();
             c = this.strafeLeft(strafeLeft);
 
-            leftRearDriveMotor.setPower(c.leftRear);
-            leftFrontDriveMotor.setPower(c.leftFront);
-            rightRearDriveMotor.setPower(c.rightRear);
-            rightFrontDriveMotor.setPower(c.rightFront);
+            if (this.currentDriveMode == driveMode.collection){
+                // Collect drive mode (slow down)
+                float collectorModeFactor = 0.7F;
+                leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
+                leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
+                rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
+                rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
+            }
+            else if (this.currentDriveMode == driveMode.deposit){
+                // Deposit drive mode (really slow down)
+                float collectorModeFactor = 0.3F;
+                leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
+                leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
+                rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
+                rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
+            }
+            else {
+                // Normal Drive mode (full speed)
+                leftRearDriveMotor.setPower(c.leftRear);
+                leftFrontDriveMotor.setPower(c.leftFront);
+                rightRearDriveMotor.setPower(c.rightRear);
+                rightFrontDriveMotor.setPower(c.rightFront);
+            }
         }
         else if (strafeRight > 0) {
             ChassisMotorValues c = new ChassisMotorValues();
             c = this.strafeRight(strafeRight);
-            leftRearDriveMotor.setPower(c.leftRear);
-            leftFrontDriveMotor.setPower(c.leftFront);
-            rightRearDriveMotor.setPower(c.rightRear);
-            rightFrontDriveMotor.setPower(c.rightFront);
+
+            if (this.currentDriveMode == driveMode.collection){
+                // Collect drive mode (slow down)
+                float collectorModeFactor = 0.7F;
+                leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
+                leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
+                rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
+                rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
+            }
+            else if (this.currentDriveMode == driveMode.deposit){
+                // Deposit drive mode (really slow down)
+                float collectorModeFactor = 0.3F;
+                leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
+                leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
+                rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
+                rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
+            }
+            else {
+                // Normal Drive mode (full speed)
+                leftRearDriveMotor.setPower(c.leftRear);
+                leftFrontDriveMotor.setPower(c.leftFront);
+                rightRearDriveMotor.setPower(c.rightRear);
+                rightFrontDriveMotor.setPower(c.rightFront);
+            }
         }
         else if (gamepad1.left_bumper){
             diagonalStrafe(rightUpStrafe, rightDownStrafe, leftUpStrafe, leftDownStrafe);
@@ -463,6 +516,12 @@ public class FreddyTeleop extends LinearOpMode {
             if (this.currentDriveMode == driveMode.collection){
                 // Collect drive mode (slow down)
                 float collectorModeFactor = 0.7F;
+                leftPower  = gamepad1.left_stick_y * collectorModeFactor;
+                rightPower = -gamepad1.right_stick_y * collectorModeFactor;
+            }
+            else if (this.currentDriveMode == driveMode.deposit){
+                // Deposit drive mode (really slow down)
+                float collectorModeFactor = 0.3F;
                 leftPower  = gamepad1.left_stick_y * collectorModeFactor;
                 rightPower = -gamepad1.right_stick_y * collectorModeFactor;
             }

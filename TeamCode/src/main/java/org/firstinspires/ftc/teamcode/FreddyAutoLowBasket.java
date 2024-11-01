@@ -32,7 +32,6 @@ package org.firstinspires.ftc.teamcode;
 
 //Imports from auto example code
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -41,9 +40,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DigitalChannel;
 import com.qualcomm.robotcore.hardware.TouchSensor;
-import java.lang.Math;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
@@ -81,9 +78,9 @@ import java.util.Locale;
 
 
 
-@Autonomous(name="Freddy Auto", group="Robot")
+@Autonomous(name="Freddy Auto - Middle Basket", group="Robot")
 //@Disabled
-public class FreddyAuto extends LinearOpMode {
+public class FreddyAutoLowBasket extends LinearOpMode {
 
     /* Declare OpMode members. */
     /* Declare hardware variables */
@@ -104,10 +101,8 @@ public class FreddyAuto extends LinearOpMode {
 
 
     // Member variables
-    private armPosition currentArmPosition = armPosition.retracted;         //The current arm position
-    private driveMode currentDriveMode = driveMode.collection;              //The current drive mode
-    private boolean waitingForSlideReset = false;                           //Variable to determine if the slide is neeing to be reset and touch the button.
     private double oldTime = 0;                                             //Used for odometry
+    private boolean isSlideButtonPressed = false;                           //Variable to determine if the slide button is being pressed
 
     private ElapsedTime     runtime = new ElapsedTime();
 
@@ -143,32 +138,74 @@ public class FreddyAuto extends LinearOpMode {
         // Wait for the game to start (driver presses START)
         waitForStart();
 
+        Pose2D startingPosition = odo.getPosition();
 
-
-
-
-
-        // Example
-        this.DriveStraightForTime(2);
-        this.DriveTurnRightForTime(2);
-        this.DriveTurnLeftForTime(2);
+        this.RunCollectorIntakeForTime(1);
+        this.MoveArmToLowBasketPosition();
+        this.DriveForwardForTime(1.2);
         this.DriveStop();
+        this.RunCollectorOuttakeForTime(1);
+        this.DriveReverseForTime(3.5);
+        this.DriveStop();
+        this.MoveArmToRetractedPosition();
 
+
+        String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", startingPosition.getX(DistanceUnit.MM), startingPosition.getY(DistanceUnit.MM), startingPosition.getHeading(AngleUnit.DEGREES));
+        telemetry.addData("Starting Position", data);
+
+        Pose2D endingPosition = odo.getPosition();
+        data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", endingPosition.getX(DistanceUnit.MM), endingPosition.getY(DistanceUnit.MM), endingPosition.getHeading(AngleUnit.DEGREES));
+        telemetry.addData("Ending Position", data);
 
 
         telemetry.addData("Path", "Complete");
         telemetry.update();
-        sleep(10000);
+        sleep(5000);
+    }
+
+    private void MoveArmToRetractedPosition(){
+        //First move the slide back until it touches the button
+        slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        slideMotor.setPower(0.5);
+
+        runtime.reset();
+        while (opModeIsActive() && (runtime.seconds() < 5)) {
+            //Check if the slide sensor button is pressed
+            this.UpdateSensorData();
+
+            //Check if the button is being pressed
+            if (this.isSlideButtonPressed){
+                //Reset the slide position
+                slideMotor.setPower(0);
+                slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                slideMotor.setTargetPosition(0);
+
+                //Next, move the arm down
+                armMotor.setTargetPosition(0);
+                ((DcMotorEx) armMotor).setVelocity(300);
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            }
+        }
     }
 
 
+    private void DriveForwardForTime(double Seconds){
+        // Setup a variable for each drive wheel to save power level for telemetry
+        double leftPower = 0.0;
+        double rightPower = 0.0;
 
+        // Tank Mode uses one stick to control each wheel.
+        float driveSpeed = 0.3F;
+        float driveOffset = 0.1F;
+        leftPower  = -driveSpeed;
+        rightPower = driveSpeed;
 
-    private void DriveStraightForTime(int Seconds){
-        leftRearDriveMotor.setPower(test_move_speed);
-        leftFrontDriveMotor.setPower(test_move_speed);
-        rightRearDriveMotor.setPower(test_move_speed);
-        rightFrontDriveMotor.setPower(test_move_speed);
+        leftRearDriveMotor.setPower(leftPower);
+        leftFrontDriveMotor.setPower(leftPower);
+        rightRearDriveMotor.setPower(rightPower);
+        rightFrontDriveMotor.setPower(rightPower);
+
         runtime.reset();
         while (opModeIsActive() && (runtime.seconds() < Seconds)) {
             // Get any sensor data
@@ -178,16 +215,28 @@ public class FreddyAuto extends LinearOpMode {
             this.HandleOdometry();
 
             telemetry.addData("Path", "1-Forward: %4.1f S Elapsed", runtime.seconds());
+            telemetry.addData("Run Time", runtime.seconds());
 
             telemetry.update();
         }
     }
 
-    private void DriveTurnLeftForTime(int Seconds){
-        leftRearDriveMotor.setPower(-test_move_speed);
-        leftFrontDriveMotor.setPower(-test_move_speed);
-        rightRearDriveMotor.setPower(-test_move_speed);
-        rightFrontDriveMotor.setPower(-test_move_speed);
+    private void DriveReverseForTime(double Seconds){
+        // Setup a variable for each drive wheel to save power level for telemetry
+        double leftPower = 0.0;
+        double rightPower = 0.0;
+
+        // Tank Mode uses one stick to control each wheel.
+        float driveSpeed = 0.4F;
+        float driveOffset = 0.1F;
+        leftPower  = driveSpeed;
+        rightPower = -driveSpeed;
+
+        leftRearDriveMotor.setPower(leftPower  + driveOffset);
+        leftFrontDriveMotor.setPower(leftPower + driveOffset);
+        rightRearDriveMotor.setPower(rightPower );
+        rightFrontDriveMotor.setPower(rightPower );
+
         runtime.reset();
         while (opModeIsActive() && (runtime.seconds() < Seconds)) {
             // Get any sensor data
@@ -196,36 +245,63 @@ public class FreddyAuto extends LinearOpMode {
             // Run any Odometry changes
             this.HandleOdometry();
 
-            telemetry.addData("Path", "2-Back: %4.1f S Elapsed", runtime.seconds());
+            telemetry.addData("Path", "1-Forward: %4.1f S Elapsed", runtime.seconds());
+            telemetry.addData("Run Time", runtime.seconds());
 
             telemetry.update();
         }
     }
 
-    private void DriveTurnRightForTime(int Seconds){
-        leftRearDriveMotor.setPower(test_spin_speed);
-        leftFrontDriveMotor.setPower(test_spin_speed);
-        rightRearDriveMotor.setPower(-test_spin_speed);
-        rightFrontDriveMotor.setPower(-test_spin_speed);
+
+    private void RunCollectorIntakeForTime(double Seconds){
+        double collectorOutput = 1.0;
+
+        collectorLeft.setPower(-collectorOutput);
+        collectorRight.setPower(collectorOutput);
+
         runtime.reset();
         while (opModeIsActive() && (runtime.seconds() < Seconds)) {
-            // Get any sensor data
-            this.UpdateSensorData();
-
-            // Run any Odometry changes
-            this.HandleOdometry();
-
-            telemetry.addData("Path", "3-Spin: %4.1f S Elapsed", runtime.seconds());
-
-            telemetry.update();
+            //Placeholder...
         }
+
+        collectorLeft.setPower(0.0);
+        collectorRight.setPower(0.0);
     }
+
+    private void RunCollectorOuttakeForTime(double Seconds){
+        double collectorOutput = 1.0;
+
+        collectorLeft.setPower(collectorOutput);
+        collectorRight.setPower(-collectorOutput);
+
+        runtime.reset();
+        while (opModeIsActive() && (runtime.seconds() < Seconds)) {
+            //Placeholder...
+        }
+
+        collectorLeft.setPower(0.0);
+        collectorRight.setPower(0.0);
+    }
+
 
     private void DriveStop(){
         leftRearDriveMotor.setPower(0);
         leftFrontDriveMotor.setPower(0);
         rightRearDriveMotor.setPower(0);
         rightFrontDriveMotor.setPower(0);
+    }
+
+    private void MoveArmToLowBasketPosition(){
+        runtime.reset();
+        while (opModeIsActive() && (runtime.seconds() < 5)) {
+            armMotor.setTargetPosition(1300);
+            ((DcMotorEx) armMotor).setVelocity(700);
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            slideMotor.setTargetPosition(-2500);
+            ((DcMotorEx) slideMotor).setVelocity(700);
+            slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        }
     }
 
     private void HandleOdometry(){
@@ -281,8 +357,10 @@ public class FreddyAuto extends LinearOpMode {
          */
         odo.update();
 
-
+        this.isSlideButtonPressed = slideButton.isPressed();
     }
+
+
 
 
     private void ConfigureHardware(){
@@ -364,7 +442,7 @@ public class FreddyAuto extends LinearOpMode {
         increase when you move the robot forward. And the Y (strafe) pod should increase when
         you move the robot to the left.
          */
-        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.FORWARD);
+        odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
 
         /*
