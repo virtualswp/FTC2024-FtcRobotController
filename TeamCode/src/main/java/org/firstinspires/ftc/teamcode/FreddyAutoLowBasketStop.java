@@ -97,7 +97,7 @@ public class FreddyAutoLowBasketStop extends LinearOpMode {
 
     private TouchSensor slideButton = null;      // The Viper Slide button at the top of the clip
 
-    private GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
+    //private GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
 
 
     // Member variables
@@ -138,7 +138,7 @@ public class FreddyAutoLowBasketStop extends LinearOpMode {
         // Wait for the game to start (driver presses START)
         waitForStart();
 
-        Pose2D startingPosition = odo.getPosition();
+        //Pose2D startingPosition = odo.getPosition();
 
         this.RunCollectorIntakeForTime(1);
         this.MoveArmToLowBasketPosition();
@@ -150,12 +150,12 @@ public class FreddyAutoLowBasketStop extends LinearOpMode {
         this.MoveArmToRetractedPosition();
 
 
-        String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", startingPosition.getX(DistanceUnit.MM), startingPosition.getY(DistanceUnit.MM), startingPosition.getHeading(AngleUnit.DEGREES));
-        telemetry.addData("Starting Position", data);
+        //String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", startingPosition.getX(DistanceUnit.MM), startingPosition.getY(DistanceUnit.MM), startingPosition.getHeading(AngleUnit.DEGREES));
+        //telemetry.addData("Starting Position", data);
 
-        Pose2D endingPosition = odo.getPosition();
-        data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", endingPosition.getX(DistanceUnit.MM), endingPosition.getY(DistanceUnit.MM), endingPosition.getHeading(AngleUnit.DEGREES));
-        telemetry.addData("Ending Position", data);
+        //Pose2D endingPosition = odo.getPosition();
+        //data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", endingPosition.getX(DistanceUnit.MM), endingPosition.getY(DistanceUnit.MM), endingPosition.getHeading(AngleUnit.DEGREES));
+        //telemetry.addData("Ending Position", data);
 
 
         telemetry.addData("Path", "Complete");
@@ -212,7 +212,7 @@ public class FreddyAutoLowBasketStop extends LinearOpMode {
             this.UpdateSensorData();
 
             // Run any Odometry changes
-            this.HandleOdometry();
+            //this.HandleOdometry();
 
             telemetry.addData("Path", "1-Forward: %4.1f S Elapsed", runtime.seconds());
             telemetry.addData("Run Time", runtime.seconds());
@@ -243,7 +243,7 @@ public class FreddyAutoLowBasketStop extends LinearOpMode {
             this.UpdateSensorData();
 
             // Run any Odometry changes
-            this.HandleOdometry();
+            //this.HandleOdometry();
 
             telemetry.addData("Path", "1-Forward: %4.1f S Elapsed", runtime.seconds());
             telemetry.addData("Run Time", runtime.seconds());
@@ -304,35 +304,35 @@ public class FreddyAutoLowBasketStop extends LinearOpMode {
         }
     }
 
-    private void HandleOdometry(){
-        /*
+    /*private void HandleOdometry(){
+        *//*
             This code prints the loop frequency of the REV Control Hub. This frequency is effected
             by I²C reads/writes. So it's good to keep an eye on. This code calculates the amount
             of time each cycle takes and finds the frequency (number of updates per second) from
             that cycle time.
-             */
+             *//*
         double newTime = getRuntime();
         double loopTime = newTime-oldTime;
         double frequency = 1/loopTime;
         oldTime = newTime;
 
 
-            /*
+            *//*
             gets the current Position (x & y in mm, and heading in degrees) of the robot, and prints it.
-             */
+             *//*
         Pose2D pos = odo.getPosition();
         String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", pos.getX(DistanceUnit.MM), pos.getY(DistanceUnit.MM), pos.getHeading(AngleUnit.DEGREES));
         telemetry.addData("Position", data);
 
-            /*
+            *//*
             gets the current Velocity (x & y in mm/sec and heading in degrees/sec) and prints it.
-             */
+             *//*
         Pose2D vel = odo.getVelocity();
         String velocity = String.format(Locale.US,"{XVel: %.3f, YVel: %.3f, HVel: %.3f}", vel.getX(DistanceUnit.MM), vel.getY(DistanceUnit.MM), vel.getHeading(AngleUnit.DEGREES));
         telemetry.addData("Velocity", velocity);
 
 
-            /*
+            *//*
             Gets the Pinpoint device status. Pinpoint can reflect a few states. But we'll primarily see
             READY: the device is working as normal
             CALIBRATING: the device is calibrating and outputs are put on hold
@@ -340,7 +340,7 @@ public class FreddyAutoLowBasketStop extends LinearOpMode {
             FAULT_NO_PODS_DETECTED - the device does not detect any pods plugged in
             FAULT_X_POD_NOT_DETECTED - The device does not detect an X pod plugged in
             FAULT_Y_POD_NOT_DETECTED - The device does not detect a Y pod plugged in
-            */
+            *//*
         telemetry.addData("Status", odo.getDeviceStatus());
 
         telemetry.addData("Pinpoint Frequency", odo.getFrequency()); //prints/gets the current refresh rate of the Pinpoint
@@ -348,14 +348,14 @@ public class FreddyAutoLowBasketStop extends LinearOpMode {
         telemetry.addData("REV Hub Frequency: ", frequency); //prints the control system refresh rate
 
     }
-
+*/
 
     private void UpdateSensorData(){
         /*
         Request an update from the Pinpoint odometry computer. This checks almost all outputs
         from the device in a single I2C read.
          */
-        odo.update();
+        //odo.update();
 
         this.isSlideButtonPressed = slideButton.isPressed();
     }
@@ -378,7 +378,7 @@ public class FreddyAutoLowBasketStop extends LinearOpMode {
 
         slideButton = hardwareMap.get(TouchSensor.class, "slideButton");                 //Expansion Hub Sensor Port 0
 
-        odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");                        // Control Hub I2C Port 0
+        //odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");                        // Control Hub I2C Port 0
 
 
         /* Most skid-steer/differential drive robots require reversing one motor to drive forward.
@@ -424,46 +424,46 @@ public class FreddyAutoLowBasketStop extends LinearOpMode {
         right of center is a negative number. the Y pod offset refers to how far forwards from
         the tracking point the Y (strafe) odometry pod is. forward of center is a positive number,
         backwards is a negative number.
-         */
+         *//*
         odo.setOffsets(-84.0, -168.0); //these are tuned for 3110-0002-0001 Product Insight #1
 
-        /*
+        *//*
         Set the kind of pods used by your robot. If you're using goBILDA odometry pods, select either
         the goBILDA_SWINGARM_POD, or the goBILDA_4_BAR_POD.
         If you're using another kind of odometry pod, uncomment setEncoderResolution and input the
         number of ticks per mm of your odometry pod.
-         */
+         *//*
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         //odo.setEncoderResolution(13.26291192);
 
 
-        /*
+        *//*
         Set the direction that each of the two odometry pods count. The X (forward) pod should
         increase when you move the robot forward. And the Y (strafe) pod should increase when
         you move the robot to the left.
-         */
+         *//*
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
 
-        /*
+        *//*
         Before running the robot, recalibrate the IMU. This needs to happen when the robot is stationary
         The IMU will automatically calibrate when first powered on, but recalibrating before running
         the robot is a good idea to ensure that the calibration is "good".
         resetPosAndIMU will reset the position to 0,0,0 and also recalibrate the IMU.
         This is recommended before you run your autonomous, as a bad initial calibration can cause
         an incorrect starting value for x, y, and heading.
-         */
+         *//*
         //odo.recalibrateIMU();
-        odo.resetPosAndIMU();
+        odo.resetPosAndIMU();*/
 
 
         /* Send telemetry message to signify robot waiting */
         telemetry.addLine("Robot Ready.");
         telemetry.addData("Status", "Initialized");
-        telemetry.addData("X offset", odo.getXOffset());
-        telemetry.addData("Y offset", odo.getYOffset());
-        telemetry.addData("Device Version Number:", odo.getDeviceVersion());
-        telemetry.addData("Device Scalar", odo.getYawScalar());
+        //telemetry.addData("X offset", odo.getXOffset());
+        //telemetry.addData("Y offset", odo.getYOffset());
+        //telemetry.addData("Device Version Number:", odo.getDeviceVersion());
+        //telemetry.addData("Device Scalar", odo.getYawScalar());
         telemetry.update();
     }
 }

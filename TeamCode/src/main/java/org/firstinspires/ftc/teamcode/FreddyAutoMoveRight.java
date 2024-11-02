@@ -97,7 +97,7 @@ public class FreddyAutoMoveRight extends LinearOpMode {
 
     private TouchSensor slideButton = null;      // The Viper Slide button at the top of the clip
 
-    private GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
+    //private GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
 
 
     // Member variables
@@ -138,18 +138,18 @@ public class FreddyAutoMoveRight extends LinearOpMode {
         // Wait for the game to start (driver presses START)
         waitForStart();
 
-        Pose2D startingPosition = odo.getPosition();
+        //Pose2D startingPosition = odo.getPosition();
 
         this.RunCollectorIntakeForTime(1.0);
-        this.DriveStrafeRight(1.0);
+        this.DriveStrafeRight(2.5);
         this.DriveStop();
 
-        String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", startingPosition.getX(DistanceUnit.MM), startingPosition.getY(DistanceUnit.MM), startingPosition.getHeading(AngleUnit.DEGREES));
-        telemetry.addData("Starting Position", data);
+        //String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", startingPosition.getX(DistanceUnit.MM), startingPosition.getY(DistanceUnit.MM), startingPosition.getHeading(AngleUnit.DEGREES));
+        //telemetry.addData("Starting Position", data);
 
-        Pose2D endingPosition = odo.getPosition();
-        data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", endingPosition.getX(DistanceUnit.MM), endingPosition.getY(DistanceUnit.MM), endingPosition.getHeading(AngleUnit.DEGREES));
-        telemetry.addData("Ending Position", data);
+        //Pose2D endingPosition = odo.getPosition();
+        //data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", endingPosition.getX(DistanceUnit.MM), endingPosition.getY(DistanceUnit.MM), endingPosition.getHeading(AngleUnit.DEGREES));
+        //telemetry.addData("Ending Position", data);
 
 
         telemetry.addData("Path", "Complete");
@@ -185,8 +185,8 @@ public class FreddyAutoMoveRight extends LinearOpMode {
         result.rightRear = strafePower;     //Should move backwards
 
         runtime.reset();
-        odo.resetPosAndIMU();
-        Pose2D endingPosition = odo.getPosition();
+        //odo.resetPosAndIMU();
+        //Pose2D endingPosition = odo.getPosition();
         while (opModeIsActive() && ((runtime.seconds() < Seconds))) {
             leftRearDriveMotor.setPower(result.leftRear);
             leftFrontDriveMotor.setPower(result.leftFront);
@@ -224,7 +224,7 @@ public class FreddyAutoMoveRight extends LinearOpMode {
 
         slideButton = hardwareMap.get(TouchSensor.class, "slideButton");                 //Expansion Hub Sensor Port 0
 
-        odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");                        // Control Hub I2C Port 0
+        //odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");                        // Control Hub I2C Port 0
 
 
         /* Most skid-steer/differential drive robots require reversing one motor to drive forward.
@@ -262,54 +262,64 @@ public class FreddyAutoMoveRight extends LinearOpMode {
         slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
+/*
 
-         /*
+         */
+/*
         Set the odometry pod positions relative to the point that the odometry computer tracks around.
         The X pod offset refers to how far sideways from the tracking point the
         X (forward) odometry pod is. Left of the center is a positive number,
         right of center is a negative number. the Y pod offset refers to how far forwards from
         the tracking point the Y (strafe) odometry pod is. forward of center is a positive number,
         backwards is a negative number.
-         */
+         *//*
+
         odo.setOffsets(-84.0, -168.0); //these are tuned for 3110-0002-0001 Product Insight #1
 
-        /*
+        */
+/*
         Set the kind of pods used by your robot. If you're using goBILDA odometry pods, select either
         the goBILDA_SWINGARM_POD, or the goBILDA_4_BAR_POD.
         If you're using another kind of odometry pod, uncomment setEncoderResolution and input the
         number of ticks per mm of your odometry pod.
-         */
+         *//*
+
         odo.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         //odo.setEncoderResolution(13.26291192);
 
 
-        /*
+        */
+/*
         Set the direction that each of the two odometry pods count. The X (forward) pod should
         increase when you move the robot forward. And the Y (strafe) pod should increase when
         you move the robot to the left.
-         */
+         *//*
+
         odo.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.REVERSED, GoBildaPinpointDriver.EncoderDirection.FORWARD);
 
 
-        /*
+        */
+/*
         Before running the robot, recalibrate the IMU. This needs to happen when the robot is stationary
         The IMU will automatically calibrate when first powered on, but recalibrating before running
         the robot is a good idea to ensure that the calibration is "good".
         resetPosAndIMU will reset the position to 0,0,0 and also recalibrate the IMU.
         This is recommended before you run your autonomous, as a bad initial calibration can cause
         an incorrect starting value for x, y, and heading.
-         */
+         *//*
+
         //odo.recalibrateIMU();
         odo.resetPosAndIMU();
+*/
 
 
         /* Send telemetry message to signify robot waiting */
         telemetry.addLine("Robot Ready.");
         telemetry.addData("Status", "Initialized");
-        telemetry.addData("X offset", odo.getXOffset());
-        telemetry.addData("Y offset", odo.getYOffset());
-        telemetry.addData("Device Version Number:", odo.getDeviceVersion());
-        telemetry.addData("Device Scalar", odo.getYawScalar());
+        //telemetry.addData("X offset", odo.getXOffset());
+        //telemetry.addData("Y offset", odo.getYOffset());
+        //telemetry.addData("Device Version Number:", odo.getDeviceVersion());
+        //telemetry.addData("Device Scalar", odo.getYawScalar());
         telemetry.update();
     }
 }
