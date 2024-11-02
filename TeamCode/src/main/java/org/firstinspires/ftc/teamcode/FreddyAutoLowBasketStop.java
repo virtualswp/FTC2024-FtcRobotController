@@ -78,9 +78,9 @@ import java.util.Locale;
 
 
 
-@Autonomous(name="Freddy Auto - Middle Basket", group="Robot")
+@Autonomous(name="Freddy Auto - Middle Basket - Stop", group="Robot")
 //@Disabled
-public class FreddyAutoLowBasket extends LinearOpMode {
+public class FreddyAutoLowBasketStop extends LinearOpMode {
 
     /* Declare OpMode members. */
     /* Declare hardware variables */
@@ -145,7 +145,7 @@ public class FreddyAutoLowBasket extends LinearOpMode {
         this.DriveForwardForTime(1.2);
         this.DriveStop();
         this.RunCollectorOuttakeForTime(1);
-        this.DriveReverseForTime(4.0);
+        this.DriveReverseForTime(1.2);
         this.DriveStop();
         this.MoveArmToRetractedPosition();
 

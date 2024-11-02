@@ -140,7 +140,7 @@ public class FreddyTeleop extends LinearOpMode {
         //Lift to collect up position
 
         //Set the drive speed to deposit
-        this.currentDriveMode = driveMode.collection;
+        //this.currentDriveMode = driveMode.collection;
 
         //Determine the current position
         switch (this.currentArmPosition){
@@ -329,7 +329,7 @@ public class FreddyTeleop extends LinearOpMode {
 
     private void MoveArmToHighBasketPosition(){
         //Set the drive speed to deposit
-        this.currentDriveMode = driveMode.deposit;
+        //this.currentDriveMode = driveMode.deposit;
 
         switch (basketArmMoveStep){
             case 0:     //First move the arm up 1/2 way
@@ -368,7 +368,7 @@ public class FreddyTeleop extends LinearOpMode {
 
     private void MoveArmToLowBasketPosition(){
         //Set the drive speed to deposit
-        this.currentDriveMode = driveMode.deposit;
+        //this.currentDriveMode = driveMode.deposit;
 
         switch (basketArmMoveStep){
             case 0:     //First move the arm up 1/2 way
@@ -407,7 +407,7 @@ public class FreddyTeleop extends LinearOpMode {
                 break;
             case 1:     //Next move the slide out 1/4 way
                 slideMotor.setTargetPosition(-800);
-                ((DcMotorEx) slideMotor).setVelocity(700);
+                ((DcMotorEx) slideMotor).setVelocity(1000);
                 slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 if (this.isMotorAtPosition(slideMotor)){
