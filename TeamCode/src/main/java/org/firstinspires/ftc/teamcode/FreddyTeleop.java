@@ -80,7 +80,10 @@ public class FreddyTeleop extends LinearOpMode {
     public DcMotor leftRearDriveMotor = null; //the left drivetrain motor
     public DcMotor rightRearDriveMotor = null; //the right drivetrain motor
 
-    public DcMotor  armMotor    = null; //the arm motor
+    public DcMotor armMotorLeft = null; //the arm motor
+
+    public DcMotor armMotorRight = null;
+
     public DcMotor  slideMotor = null;
 
     private CRServo collectorLeft = null;
@@ -152,12 +155,12 @@ public class FreddyTeleop extends LinearOpMode {
 
                 if (this.isMotorAtPosition(slideMotor)){
                     //Next, move the arm down
-                    armMotor.setTargetPosition(500);
-                    ((DcMotorEx) armMotor).setVelocity(500);
-                    armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armMotorLeft.setTargetPosition(500);
+                    ((DcMotorEx) armMotorLeft).setVelocity(500);
+                    armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                     //Next, check if the arm is at the final position
-                    if (this.isMotorAtPosition(armMotor)){
+                    if (this.isMotorAtPosition(armMotorLeft)){
                         //Success
                         this.currentArmPosition = armPosition.collectUp;
                     }
@@ -171,12 +174,12 @@ public class FreddyTeleop extends LinearOpMode {
 
                 if (this.isMotorAtPosition(slideMotor)){
                     //Next, move the arm down
-                    armMotor.setTargetPosition(500);
-                    ((DcMotorEx) armMotor).setVelocity(500);
-                    armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armMotorLeft.setTargetPosition(500);
+                    ((DcMotorEx) armMotorLeft).setVelocity(500);
+                    armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                     //Next, check if the arm is at the final position
-                    if (this.isMotorAtPosition(armMotor)){
+                    if (this.isMotorAtPosition(armMotorLeft)){
                         //Success
                         this.currentArmPosition = armPosition.collectUp;
                     }
@@ -184,12 +187,12 @@ public class FreddyTeleop extends LinearOpMode {
                 break;
             default:
                 //First move the arm up
-                armMotor.setTargetPosition(500);
-                ((DcMotorEx) armMotor).setVelocity(1900);
-                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armMotorLeft.setTargetPosition(500);
+                ((DcMotorEx) armMotorLeft).setVelocity(1900);
+                armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 // Next, check if the arm is up, if so, then slide out
-                if (this.isMotorAtPosition(armMotor)){
+                if (this.isMotorAtPosition(armMotorLeft)){
                     slideMotor.setTargetPosition(-2500);
                     ((DcMotorEx) slideMotor).setVelocity(1900);
                     slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -217,27 +220,27 @@ public class FreddyTeleop extends LinearOpMode {
             switch (this.currentArmPosition){
                 case highBasket:
                     //Move down more slowly if coming from the high basket
-                    armMotor.setTargetPosition(200);
-                    ((DcMotorEx) armMotor).setVelocity(500);
-                    armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armMotorLeft.setTargetPosition(200);
+                    ((DcMotorEx) armMotorLeft).setVelocity(500);
+                    armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                     break;
                 case lowBasket:
                     //Move down more slowly if coming from the low basket
-                    armMotor.setTargetPosition(0);
-                    ((DcMotorEx) armMotor).setVelocity(800);
-                    armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armMotorLeft.setTargetPosition(0);
+                    ((DcMotorEx) armMotorLeft).setVelocity(800);
+                    armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                     break;
                 default:
                     //Move down quickly if moving from collect up, or retract
-                    armMotor.setTargetPosition(200);
-                    ((DcMotorEx) armMotor).setVelocity(700);
-                    armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armMotorLeft.setTargetPosition(200);
+                    ((DcMotorEx) armMotorLeft).setVelocity(700);
+                    armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                     break;
             }
 
-            if (this.isMotorAtPosition(armMotor)){
+            if (this.isMotorAtPosition(armMotorLeft)){
                 //Success
                 this.currentArmPosition = armPosition.collectDown;
             }
@@ -258,11 +261,11 @@ public class FreddyTeleop extends LinearOpMode {
             slideMotor.setTargetPosition(0);
 
             //Next, move the arm down
-            armMotor.setTargetPosition(0);
-            ((DcMotorEx) armMotor).setVelocity(300);
-            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            armMotorLeft.setTargetPosition(0);
+            ((DcMotorEx) armMotorLeft).setVelocity(300);
+            armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-            if (this.isMotorAtPosition(armMotor)){
+            if (this.isMotorAtPosition(armMotorLeft)){
                 //Success
                 this.currentArmPosition = armPosition.retracted;
             }
@@ -300,6 +303,30 @@ public class FreddyTeleop extends LinearOpMode {
             this.targetArmPosition = armPosition.endgame;
         }
 
+
+        if ((gamepad2.dpad_up) || (gamepad2.dpad_down)) {
+            if (gamepad2.dpad_up)
+            {
+                //((DcMotorEx) armMotorLeft).setVelocity(500);
+                ((DcMotorEx) armMotorLeft).setPower(0.5);
+
+                //((DcMotorEx) armMotorRight).setVelocity(500);
+                ((DcMotorEx) armMotorRight).setPower(0.5);
+
+            }
+            else if (gamepad2.dpad_down)
+            {
+                ((DcMotorEx) armMotorLeft).setPower(-0.5);
+                ((DcMotorEx) armMotorRight).setPower(-0.5);
+            }
+        }
+        else
+        {
+            ((DcMotorEx) armMotorLeft).setPower(0);
+            ((DcMotorEx) armMotorRight).setPower(0);
+        }
+
+
         //Next, check if we need to move the arm
         if (!this.isArmAtTargetPosition()){
             switch (this.targetArmPosition){
@@ -333,11 +360,11 @@ public class FreddyTeleop extends LinearOpMode {
 
         switch (basketArmMoveStep){
             case 0:     //First move the arm up 1/2 way
-                armMotor.setTargetPosition(750);
-                ((DcMotorEx) armMotor).setVelocity(700);
-                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armMotorLeft.setTargetPosition(750);
+                ((DcMotorEx) armMotorLeft).setVelocity(700);
+                armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-                if (this.isMotorAtPosition(armMotor)){
+                if (this.isMotorAtPosition(armMotorLeft)){
                     this.basketArmMoveStep = 1;
                 }
 
@@ -353,11 +380,11 @@ public class FreddyTeleop extends LinearOpMode {
 
                 break;
             case 2:     // Next, move the arm up fully
-                armMotor.setTargetPosition(1700);
-                ((DcMotorEx) armMotor).setVelocity(700);
-                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armMotorLeft.setTargetPosition(1700);
+                ((DcMotorEx) armMotorLeft).setVelocity(700);
+                armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-                if (this.isMotorAtPosition(armMotor)){
+                if (this.isMotorAtPosition(armMotorLeft)){
                     this.basketArmMoveStep = 3;
                     this.currentArmPosition = armPosition.highBasket;
                 }
@@ -372,11 +399,11 @@ public class FreddyTeleop extends LinearOpMode {
 
         switch (basketArmMoveStep){
             case 0:     //First move the arm up 1/2 way
-                armMotor.setTargetPosition(1300);
-                ((DcMotorEx) armMotor).setVelocity(700);
-                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armMotorLeft.setTargetPosition(1300);
+                ((DcMotorEx) armMotorLeft).setVelocity(700);
+                armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-                if (this.isMotorAtPosition(armMotor)){
+                if (this.isMotorAtPosition(armMotorLeft)){
                     this.basketArmMoveStep = 1;
                 }
 
@@ -396,11 +423,11 @@ public class FreddyTeleop extends LinearOpMode {
     private void MoveArmToEndGamePosition(){
         switch (basketArmMoveStep){
             case 0:     //First move the arm up 1/2 way
-                armMotor.setTargetPosition(900);
-                ((DcMotorEx) armMotor).setVelocity(700);
-                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armMotorLeft.setTargetPosition(900);
+                ((DcMotorEx) armMotorLeft).setVelocity(700);
+                armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-                if (this.isMotorAtPosition(armMotor)){
+                if (this.isMotorAtPosition(armMotorLeft)){
                     this.basketArmMoveStep = 1;
                 }
 
@@ -635,7 +662,7 @@ public class FreddyTeleop extends LinearOpMode {
 
     private void HandleTeleopTelemetry(){
         /* Check to see if our arm and slider is over the current limit, and report via telemetry. */
-        if (((DcMotorEx) armMotor).isOverCurrent()){
+        if (((DcMotorEx) armMotorLeft).isOverCurrent()){
             telemetry.addLine("ARM MOTOR EXCEEDED CURRENT LIMIT!");
         }
 
@@ -645,8 +672,8 @@ public class FreddyTeleop extends LinearOpMode {
 
 
         /* send telemetry to the driver of the arm's current position and target position */
-        telemetry.addData("Arm Target: ", armMotor.getTargetPosition());
-        telemetry.addData("Arm Encoder: ", armMotor.getCurrentPosition());
+        telemetry.addData("Arm Target: ", armMotorLeft.getTargetPosition());
+        telemetry.addData("Arm Encoder: ", armMotorLeft.getCurrentPosition());
         telemetry.addData("Slide Target: ", slideMotor.getTargetPosition());
         telemetry.addData("Slide Encoder: ", slideMotor.getCurrentPosition());
         telemetry.addData("Arm Position", this.currentArmPosition);
@@ -663,10 +690,11 @@ public class FreddyTeleop extends LinearOpMode {
         collectorLeft = hardwareMap.get(CRServo.class, "collectorLeft");                 //Control Hub Servo Port 0
         collectorRight = hardwareMap.get(CRServo.class, "collectorRight");               //Control Hub Servo Port 1
 
-        armMotor   = hardwareMap.get(DcMotor.class, "arm"); //the arm motor              //Expansion Hub Motor Port 0
-        slideMotor = hardwareMap.get(DcMotor.class, "slide");                            //Expansion Hub Motor Port 1
+        armMotorLeft = hardwareMap.get(DcMotor.class, "armleft");                        //Expansion Hub Motor Port 1
+        armMotorRight = hardwareMap.get(DcMotor.class, "armright");//the arm motor       //Expansion Hub Motor Port 2
+        slideMotor = hardwareMap.get(DcMotor.class, "slide");                            //Expansion Hub Motor Port 0
 
-        slideButton = hardwareMap.get(TouchSensor.class, "slideButton");              //Expansion Hub Sensor Port 0
+        slideButton = hardwareMap.get(TouchSensor.class, "slideButton");                 //Expansion Hub Sensor Port 0
 
 
         /* Most skid-steer/differential drive robots require reversing one motor to drive forward.
@@ -676,7 +704,8 @@ public class FreddyTeleop extends LinearOpMode {
         leftRearDriveMotor.setDirection(DcMotor.Direction.FORWARD);
         rightRearDriveMotor.setDirection(DcMotor.Direction.FORWARD);
 
-        armMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        armMotorLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        armMotorRight.setDirection(DcMotorSimple.Direction.FORWARD);
         slideMotor.setDirection(DcMotor.Direction.FORWARD);
 
         /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
@@ -686,18 +715,30 @@ public class FreddyTeleop extends LinearOpMode {
         rightFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armMotorLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
-        ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+        ((DcMotorEx) armMotorLeft).setCurrentAlert(5,CurrentUnit.AMPS);
+        ((DcMotorEx) armMotorRight).setCurrentAlert(5,CurrentUnit.AMPS);
         ((DcMotorEx) slideMotor).setCurrentAlert(5,CurrentUnit.AMPS);
 
 
         //Set the arm motor's motor encoder to 0
-        armMotor.setTargetPosition(0);
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        // Temporary comment out to run the arm motors off the control pads d-Pad .
+//        armMotorLeft.setTargetPosition(0);
+//        armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        armMotorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        armMotorRight.setTargetPosition(0);
+//        armMotorRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//        armMotorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armMotorLeft.setTargetPosition(0);
+        armMotorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        armMotorRight.setTargetPosition(0);
+        armMotorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+
+
 
         //Set the viper slide motor encode to 0
         slideMotor.setTargetPosition(0);
