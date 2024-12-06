@@ -137,6 +137,7 @@ public class FreddyTeleop extends LinearOpMode {
         // Check if the arm is starting from home or collect down //
         this.CheckInitialArmState();
 
+
         /* Run until the driver presses stop */
         while (opModeIsActive()) {
             this.HandleTeleopDrive();
@@ -264,8 +265,6 @@ public class FreddyTeleop extends LinearOpMode {
         }
     }
 
-
-
     private void MoveArmToDownPosition(double leftMotorPower, double rightMotorPower){
         /* This function will move the arm to the down position with a set power / speed */
 
@@ -289,31 +288,6 @@ public class FreddyTeleop extends LinearOpMode {
 
             this.currentArmPosition = armPosition.collectDown;
         }
-    }
-
-    private void MoveArmToHomePosition(){
-//        //First move the slide back until it touches the button
-//        slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-//        slideMotor.setPower(0.5);
-//
-//        //Check if the button is being pressed
-//        if (this.isArmButtonPressed){
-//            //Reset the slide position
-//            slideMotor.setPower(0);
-//            slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-//            slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//            slideMotor.setTargetPosition(0);
-//
-//            //Next, move the arm down
-//            armMotorLeft.setTargetPosition(0);
-//            ((DcMotorEx) armMotorLeft).setVelocity(300);
-//            armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//
-//            if (this.isMotorAtPosition(armMotorLeft)){
-//                //Success
-//                this.currentArmPosition = armPosition.home;
-//            }
-//        }
     }
 
     private void HandleTeleopArm(){
@@ -341,7 +315,7 @@ public class FreddyTeleop extends LinearOpMode {
         }
         else if (gamepad2.right_bumper){
             //Retract the arm to starting position
-            this.targetArmPosition = armPosition.home;
+            //this.targetArmPosition = armPosition.home;
         }
         else if (gamepad2.left_bumper){
             //Move to the end game position
@@ -365,7 +339,7 @@ public class FreddyTeleop extends LinearOpMode {
                     this.MoveArmToLowBasketPosition();
                     break;
                 case home:
-                    this.MoveArmToHomePosition();
+                    //this.MoveArmToHomePosition();
                     break;
                 case endgame:
                     this.MoveArmToEndGamePosition();
@@ -618,6 +592,7 @@ public class FreddyTeleop extends LinearOpMode {
             gripperHand.setPosition(0.0);
         }
     }
+
 
     public boolean isMotorAtPosition(DcMotor motor)
     {

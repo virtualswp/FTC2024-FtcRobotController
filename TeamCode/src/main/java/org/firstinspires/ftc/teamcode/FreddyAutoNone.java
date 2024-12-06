@@ -128,25 +128,31 @@ public class FreddyAutoNone extends LinearOpMode {
     private void MoveArmToDownPosition(double leftMotorPower, double rightMotorPower){
         /* This function will move the arm to the down position with a set power / speed */
 
-        armMotorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        armMotorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        ((DcMotorEx) armMotorLeft).setPower(leftMotorPower);
-        ((DcMotorEx) armMotorRight).setPower(rightMotorPower);
+        runtime.reset();
 
-        if (this.isArmButtonPressed) {
-            ((DcMotorEx) armMotorLeft).setPower(0.0);
-            ((DcMotorEx) armMotorRight).setPower(0.0);
+        while (opModeIsActive() && (runtime.seconds() < 10)) {
+            armMotorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            armMotorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            ((DcMotorEx) armMotorLeft).setPower(leftMotorPower);
+            ((DcMotorEx) armMotorRight).setPower(rightMotorPower);
 
-            armMotorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            armMotorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            if (this.isArmButtonPressed) {
+                ((DcMotorEx) armMotorLeft).setPower(0.0);
+                ((DcMotorEx) armMotorRight).setPower(0.0);
 
-            armMotorLeft.setTargetPosition(0);
-            armMotorRight.setTargetPosition(0);
+                armMotorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                armMotorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-            armMotorRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-            armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armMotorLeft.setTargetPosition(0);
+                armMotorRight.setTargetPosition(0);
 
-            this.currentArmPosition = FreddyAutoNone.armPosition.collectDown;
+                armMotorRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                this.currentArmPosition = FreddyAutoNone.armPosition.collectDown;
+
+                break;
+            }
         }
     }
 
@@ -164,8 +170,7 @@ public class FreddyAutoNone extends LinearOpMode {
         result.rightRear = strafePower;     //Should move backwards
 
         runtime.reset();
-        //odo.resetPosAndIMU();
-        //Pose2D endingPosition = odo.getPosition();
+
         while (opModeIsActive() && ((runtime.seconds() < Seconds))) {
             leftRearDriveMotor.setPower(result.leftRear);
             leftFrontDriveMotor.setPower(result.leftFront);

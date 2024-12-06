@@ -29,11 +29,13 @@
 
 //package org.firstinspires.ftc.robotcontroller.external.samples;
 package org.firstinspires.ftc.teamcode;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 //Imports from auto example code
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 //Imports from FreddyTeleop
@@ -42,93 +44,71 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-
-
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-
-import java.util.Locale;
-
-
-
-/*
- * This OpMode illustrates the concept of driving a path based on time.
- * The code is structured as a LinearOpMode
- *
- * The code assumes that you do NOT have encoders on the wheels,
- *   otherwise you would use: RobotAutoDriveByEncoder;
- *
- *   The desired path in this example is:
- *   - Drive forward for 3 seconds
- *   - Spin right for 1.3 seconds
- *   - Drive Backward for 1 Second
- *
- *  The code is written in a simple form with no optimizations.
- *  However, there are several ways that this type of sequence could be streamlined,
- *
- * Use Android Studio to Copy this Class, and Paste it into your team's code folder with a new name.
- * Remove or comment out the @Disabled line to add this OpMode to the Driver Station OpMode list
- */
 
 
 
 
-
-
-@Autonomous(name="Freddy Auto - Middle Basket", group="Robot")
+@Autonomous(name="Freddy Auto - Low Basket", group="Robot")
 //@Disabled
 public class FreddyAutoLowBasket extends LinearOpMode {
 
-    /* Declare OpMode members. */
     /* Declare hardware variables */
     public DcMotor leftFrontDriveMotor = null; //the left drivetrain motor
     public DcMotor rightFrontDriveMotor = null; //the right drivetrain motor
     public DcMotor leftRearDriveMotor = null; //the left drivetrain motor
     public DcMotor rightRearDriveMotor = null; //the right drivetrain motor
 
-    public DcMotor  armMotor    = null; //the arm motor
+    public DcMotor armMotorLeft = null; //the arm motor
+
+    public DcMotor armMotorRight = null;
+
     public DcMotor  slideMotor = null;
 
-    private CRServo collectorLeft = null;
-    private CRServo collectorRight = null;
+    private CRServo gripperWrist = null;
+    private Servo gripperHand = null;
 
-    private TouchSensor slideButton = null;      // The Viper Slide button at the top of the clip
-
-    //private GoBildaPinpointDriver odo; // Declare OpMode member for the Odometry Computer
+    private TouchSensor armButton = null;      // The Viper Slide button at the top of the clip
 
 
     // Member variables
-    private double oldTime = 0;                                             //Used for odometry
-    private boolean isSlideButtonPressed = false;                           //Variable to determine if the slide button is being pressed
+    private FreddyAutoLowBasket.armPosition currentArmPosition = FreddyAutoLowBasket.armPosition.home;         //The current arm position
+    private FreddyAutoLowBasket.armPosition targetArmPosition = FreddyAutoLowBasket.armPosition.home;          //The target arm position
+    private int basketArmMoveStep = 0;                                      //While moving the arm in, what stage it's in
 
-    private ElapsedTime     runtime = new ElapsedTime();
-
-    static final double     test_move_speed = 0.5;
-    static final double     test_spin_speed    = 0.2;
-
+    private FreddyAutoLowBasket.driveMode currentDriveMode = FreddyAutoLowBasket.driveMode.collection;              //The current drive mode
+    private boolean isArmButtonPressed = false;                           //Variable to determine if the slide button is being pressed
 
 
+    private static final int SLIDE_LOW_BASKET  = 2500;                  //The degrees the encoder needs to move the slide motor to get to the low basket
+    private static final int SLIDE_HIGH_BASKET = 5000;                  //The degrees the encoder needs to move the slide motor to get to the high basket
 
 
-//    Used in Auto examples, may be able to remove them
-//    static final double     FORWARD_SPEED = 0.6;
-//    static final double     TURN_SPEED    = 0.5;
+
+    private TouchSensor slideButton = null;      // The Viper Slide button at the top of the clip
+
+
+    // Member variables
+    private ElapsedTime runtime = new ElapsedTime();
+
+
+
 
     //Enumerations
     private enum armPosition {
-        retracted,
+        home,
         collectUp,
         collectDown,
-        highBasket
+        lowBasket,
+        highBasket,
+        endgame
     }
 
     private enum driveMode {
         normal,
-        collection
+        collection,
+        deposit
     }
+
 
 
     @Override
@@ -138,57 +118,77 @@ public class FreddyAutoLowBasket extends LinearOpMode {
         // Wait for the game to start (driver presses START)
         waitForStart();
 
-        //Pose2D startingPosition = odo.getPosition();
-
-        this.RunCollectorIntakeForTime(1);
-        this.MoveArmToLowBasketPosition();
+        this.CloseHandGripper();
+        this.MoveArmToDownPosition(0.2, 0.2);
         this.DriveForwardForTime(1.2);
         this.DriveStop();
-        this.RunCollectorOuttakeForTime(1);
-        this.DriveReverseForTime(4.0);
-        this.DriveStop();
-        this.MoveArmToRetractedPosition();
+        this.MoveArmToLowBasketPosition();
+        this.OpenHandGripper();
+        sleep(2000);
+        this.DriveReverseForTime(1.2);
+        this.MoveArmToDownPosition(0.2, 0.2);
 
-
-        /*String data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", startingPosition.getX(DistanceUnit.MM), startingPosition.getY(DistanceUnit.MM), startingPosition.getHeading(AngleUnit.DEGREES));
-        telemetry.addData("Starting Position", data);
-
-        Pose2D endingPosition = odo.getPosition();
-        data = String.format(Locale.US, "{X: %.3f, Y: %.3f, H: %.3f}", endingPosition.getX(DistanceUnit.MM), endingPosition.getY(DistanceUnit.MM), endingPosition.getHeading(AngleUnit.DEGREES));
-        telemetry.addData("Ending Position", data);*/
-
-
-        telemetry.addData("Path", "Complete");
-        telemetry.update();
         sleep(5000);
     }
 
-    private void MoveArmToRetractedPosition(){
-        //First move the slide back until it touches the button
-        slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        slideMotor.setPower(0.5);
+    private void MoveArmToDownPosition(double leftMotorPower, double rightMotorPower){
+        /* This function will move the arm to the down position with a set power / speed */
 
         runtime.reset();
-        while (opModeIsActive() && (runtime.seconds() < 5)) {
-            //Check if the slide sensor button is pressed
-            this.UpdateSensorData();
 
-            //Check if the button is being pressed
-            if (this.isSlideButtonPressed){
-                //Reset the slide position
-                slideMotor.setPower(0);
-                slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                slideMotor.setTargetPosition(0);
+        while (opModeIsActive() && (runtime.seconds() < 10)) {
+            armMotorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            armMotorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            ((DcMotorEx) armMotorLeft).setPower(leftMotorPower);
+            ((DcMotorEx) armMotorRight).setPower(rightMotorPower);
 
-                //Next, move the arm down
-                armMotor.setTargetPosition(0);
-                ((DcMotorEx) armMotor).setVelocity(300);
-                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            if (this.isArmButtonPressed) {
+                ((DcMotorEx) armMotorLeft).setPower(0.0);
+                ((DcMotorEx) armMotorRight).setPower(0.0);
+
+                armMotorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                armMotorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+                armMotorLeft.setTargetPosition(0);
+                armMotorRight.setTargetPosition(0);
+
+                armMotorRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                this.currentArmPosition = FreddyAutoLowBasket.armPosition.collectDown;
+
+                break;
             }
         }
     }
 
+    private void MoveArmToLowBasketPosition(){
+        runtime.reset();
+
+        while (opModeIsActive() && (runtime.seconds() < 10)) {
+            switch (basketArmMoveStep){
+                case 0:     //First move the arm to 90 degrees
+                    armMotorLeft.setTargetPosition(3000);
+                    ((DcMotorEx) armMotorLeft).setVelocity(700);
+                    armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    if (this.isMotorAtPosition(armMotorLeft)){
+                        this.basketArmMoveStep = 1;
+                    }
+
+                    break;
+                case 1:     //Next move the slide out 1/2 way
+                    slideMotor.setTargetPosition(-2500);
+                    ((DcMotorEx) slideMotor).setVelocity(700);
+                    slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    if (this.isMotorAtPosition(slideMotor)){
+                        this.basketArmMoveStep = 2;
+                        this.currentArmPosition = FreddyAutoLowBasket.armPosition.lowBasket;
+                    }
+            }
+        }
+    }
 
     private void DriveForwardForTime(double Seconds){
         // Setup a variable for each drive wheel to save power level for telemetry
@@ -208,12 +208,6 @@ public class FreddyAutoLowBasket extends LinearOpMode {
 
         runtime.reset();
         while (opModeIsActive() && (runtime.seconds() < Seconds)) {
-            // Get any sensor data
-            this.UpdateSensorData();
-
-            // Run any Odometry changes
-            //this.HandleOdometry();
-
             telemetry.addData("Path", "1-Forward: %4.1f S Elapsed", runtime.seconds());
             telemetry.addData("Run Time", runtime.seconds());
 
@@ -239,12 +233,6 @@ public class FreddyAutoLowBasket extends LinearOpMode {
 
         runtime.reset();
         while (opModeIsActive() && (runtime.seconds() < Seconds)) {
-            // Get any sensor data
-            this.UpdateSensorData();
-
-            // Run any Odometry changes
-            //this.HandleOdometry();
-
             telemetry.addData("Path", "1-Forward: %4.1f S Elapsed", runtime.seconds());
             telemetry.addData("Run Time", runtime.seconds());
 
@@ -252,37 +240,33 @@ public class FreddyAutoLowBasket extends LinearOpMode {
         }
     }
 
-
-    private void RunCollectorIntakeForTime(double Seconds){
-        double collectorOutput = 1.0;
-
-        collectorLeft.setPower(-collectorOutput);
-        collectorRight.setPower(collectorOutput);
-
-        runtime.reset();
-        while (opModeIsActive() && (runtime.seconds() < Seconds)) {
-            //Placeholder...
-        }
-
-        collectorLeft.setPower(0.0);
-        collectorRight.setPower(0.0);
+    private void OpenHandGripper(){
+        gripperHand.setPosition(0.0);
     }
 
-    private void RunCollectorOuttakeForTime(double Seconds){
-        double collectorOutput = 1.0;
-
-        collectorLeft.setPower(collectorOutput);
-        collectorRight.setPower(-collectorOutput);
-
-        runtime.reset();
-        while (opModeIsActive() && (runtime.seconds() < Seconds)) {
-            //Placeholder...
-        }
-
-        collectorLeft.setPower(0.0);
-        collectorRight.setPower(0.0);
+    private void CloseHandGripper(){
+        double fullRotationPosition = 1.0;
+        gripperHand.setPosition(-fullRotationPosition);
     }
 
+    public void DriveStrafeRight(double Seconds) {
+        ChassisMotorValues result = new ChassisMotorValues();
+
+        double strafePower = 0.3;
+        result.leftFront = -strafePower;    //Should move backwards
+        result.rightFront = -strafePower;    //Should move forwards
+        result.leftRear = strafePower;     //Should move forwards
+        result.rightRear = strafePower;     //Should move backwards
+
+        runtime.reset();
+
+        while (opModeIsActive() && ((runtime.seconds() < Seconds))) {
+            leftRearDriveMotor.setPower(result.leftRear);
+            leftFrontDriveMotor.setPower(result.leftFront);
+            rightRearDriveMotor.setPower(result.rightRear);
+            rightFrontDriveMotor.setPower(result.rightFront);
+        }
+    }
 
     private void DriveStop(){
         leftRearDriveMotor.setPower(0);
@@ -291,31 +275,28 @@ public class FreddyAutoLowBasket extends LinearOpMode {
         rightFrontDriveMotor.setPower(0);
     }
 
-    private void MoveArmToLowBasketPosition(){
-        runtime.reset();
-        while (opModeIsActive() && (runtime.seconds() < 5)) {
-            armMotor.setTargetPosition(1300);
-            ((DcMotorEx) armMotor).setVelocity(700);
-            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-            slideMotor.setTargetPosition(-2500);
-            ((DcMotorEx) slideMotor).setVelocity(700);
-            slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    public boolean isMotorAtPosition(DcMotor motor)
+    {
+        if (!motor.isBusy()){
+            telemetry.addData("motor: ", motor.isBusy());
+            return true;
         }
+
+        int varianceFactor = 10;
+
+        int currentMotorPosition = motor.getCurrentPosition();
+        int targetMotorPosition = motor.getTargetPosition();
+
+        telemetry.addData("currentMotorPosition: ", currentMotorPosition);
+        telemetry.addData("targetMotorPosition: ", targetMotorPosition);
+
+        int error = Math.abs(targetMotorPosition - currentMotorPosition);
+
+        telemetry.addData("error: ", error);
+        telemetry.addData("isMotorAtPosition", (error <= varianceFactor));
+
+        return error <= varianceFactor;
     }
-
-
-    private void UpdateSensorData(){
-        /*
-        Request an update from the Pinpoint odometry computer. This checks almost all outputs
-        from the device in a single I2C read.
-         */
-
-        this.isSlideButtonPressed = slideButton.isPressed();
-    }
-
-
-
 
     private void ConfigureHardware(){
         /* Define and Initialize Motors */
@@ -324,15 +305,14 @@ public class FreddyAutoLowBasket extends LinearOpMode {
         leftRearDriveMotor = hardwareMap.get(DcMotor.class, "leftRearDrive");            //Control Hub Motor Port 2
         rightRearDriveMotor = hardwareMap.get(DcMotor.class, "rightRearDrive");          //Control Hub Motor Port 3
 
-        collectorLeft = hardwareMap.get(CRServo.class, "collectorLeft");                 //Control Hub Servo Port 0
-        collectorRight = hardwareMap.get(CRServo.class, "collectorRight");               //Control Hub Servo Port 1
+        gripperWrist = hardwareMap.get(CRServo.class, "gripperWrist");                   //Control Hub Servo Port 0
+        gripperHand = hardwareMap.get(Servo.class, "gripperHand");                       //Control Hub Servo Port 1
 
-        armMotor   = hardwareMap.get(DcMotor.class, "arm"); //the arm motor              //Expansion Hub Motor Port 0
-        slideMotor = hardwareMap.get(DcMotor.class, "slide");                            //Expansion Hub Motor Port 1
+        armMotorLeft = hardwareMap.get(DcMotor.class, "armleft");                        //Expansion Hub Motor Port 1
+        armMotorRight = hardwareMap.get(DcMotor.class, "armright");//the arm motor       //Expansion Hub Motor Port 2
+        slideMotor = hardwareMap.get(DcMotor.class, "slide");                            //Expansion Hub Motor Port 0
 
-        slideButton = hardwareMap.get(TouchSensor.class, "slideButton");                 //Expansion Hub Sensor Port 0
-
-        //odo = hardwareMap.get(GoBildaPinpointDriver.class,"odo");                        // Control Hub I2C Port 0
+        armButton = hardwareMap.get(TouchSensor.class, "armButton");                     //Expansion Hub Sensor Port 0
 
 
         /* Most skid-steer/differential drive robots require reversing one motor to drive forward.
@@ -341,8 +321,8 @@ public class FreddyAutoLowBasket extends LinearOpMode {
         rightFrontDriveMotor.setDirection(DcMotor.Direction.FORWARD);
         leftRearDriveMotor.setDirection(DcMotor.Direction.FORWARD);
         rightRearDriveMotor.setDirection(DcMotor.Direction.FORWARD);
-
-        armMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+        armMotorLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        armMotorRight.setDirection(DcMotorSimple.Direction.FORWARD);
         slideMotor.setDirection(DcMotor.Direction.FORWARD);
 
         /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
@@ -352,32 +332,31 @@ public class FreddyAutoLowBasket extends LinearOpMode {
         rightFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armMotorLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armMotorRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
-        ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+        ((DcMotorEx) armMotorLeft).setCurrentAlert(5,CurrentUnit.AMPS);
+        ((DcMotorEx) armMotorRight).setCurrentAlert(5,CurrentUnit.AMPS);
         ((DcMotorEx) slideMotor).setCurrentAlert(5,CurrentUnit.AMPS);
 
 
         //Set the arm motor's motor encoder to 0
-        armMotor.setTargetPosition(0);
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armMotorLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armMotorRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armMotorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armMotorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
 
         //Set the viper slide motor encode to 0
         slideMotor.setTargetPosition(0);
         slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-
         /* Send telemetry message to signify robot waiting */
-        telemetry.addLine("Robot Ready.");
-        telemetry.addData("Status", "Initialized");
-        //telemetry.addData("X offset", odo.getXOffset());
-        //telemetry.addData("Y offset", odo.getYOffset());
-        //telemetry.addData("Device Version Number:", odo.getDeviceVersion());
-        //telemetry.addData("Device Scalar", odo.getYawScalar());
+        telemetry.addLine("Robot Is Ready.");
         telemetry.update();
     }
+
 }
