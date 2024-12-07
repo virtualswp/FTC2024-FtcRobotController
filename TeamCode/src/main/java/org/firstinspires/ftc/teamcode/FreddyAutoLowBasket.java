@@ -80,9 +80,11 @@ public class FreddyAutoLowBasket extends LinearOpMode {
 
 
     private static final int SLIDE_LOW_BASKET  = 2000;                  //The degrees the encoder needs to move the slide motor to get to the low basket
-    private static final int SLIDE_HIGH_BASKET = 15000;                  //The degrees the encoder needs to move the slide motor to get to the high basket
-    private static final int ARM_RAISE = -1700;                         //The degrees to move the arm straight up
+    private static final int SLIDE_HIGH_BASKET = 3000;                  //The degrees the encoder needs to move the slide motor to get to the high basket
+    //private static final int SLIDE_HIGH_BASKET = 15000;                  //The degrees the encoder needs to move the slide motor to get to the high basket
+    private static final int ARM_RAISE = -1600;                         //The degrees to move the arm straight up
     private static final int ARM_COLLECT_UP = -500;                     //The degrees to move the arm up slightly to get over the bar
+
 
     // Member variables
     private ElapsedTime runtime = new ElapsedTime();
@@ -115,15 +117,19 @@ public class FreddyAutoLowBasket extends LinearOpMode {
         // Wait for the game to start (driver presses START)
         waitForStart();
 
-        //this.CloseHandGripper();
+        this.CloseHandGripper();
         this.MoveArmToDownPosition(0.2, 0.2);
         this.MoveArmToHighBasketPosition();
-        //this.DriveForwardForTime(1.2)
+        this.DriveForwardForTime(1.0);
+        this.DriveStop();
         this.OpenHandGripper();
-        sleep(2000);
-//        this.DriveReverseForTime(2.2);
-        //this.DriveStop();
+        sleep(1000);
+        this.DriveReverseForTime(1.0);
+        this.DriveStop();
         this.MoveArmToCollectUpPosition();
+        this.MoveArmToDownPosition(0.2, 0.2);
+        this.DriveReverseForTime(1.0);
+        this.DriveStop();
         sleep(5000);
     }
 
@@ -197,7 +203,7 @@ public class FreddyAutoLowBasket extends LinearOpMode {
                     break;
                 case 1:     //Next move the slide out all the way
                     slideMotor.setTargetPosition(-SLIDE_HIGH_BASKET);
-                    ((DcMotorEx) slideMotor).setVelocity(2000);
+                    ((DcMotorEx) slideMotor).setVelocity(900);
                     slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                     if (this.isMotorAtPosition(slideMotor)){
@@ -339,12 +345,12 @@ public class FreddyAutoLowBasket extends LinearOpMode {
     }
 
     private void OpenHandGripper(){
-        gripperHand.setPosition(0.0);
+        double fullRotationPosition = 0.3;
+        gripperHand.setPosition(fullRotationPosition);
     }
 
     private void CloseHandGripper(){
-        double fullRotationPosition = 1.0;
-        gripperHand.setPosition(-fullRotationPosition);
+        gripperHand.setPosition(0.0);
     }
 
     public void DriveStrafeRight(double Seconds) {

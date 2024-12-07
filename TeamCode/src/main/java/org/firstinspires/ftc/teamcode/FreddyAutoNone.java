@@ -48,7 +48,7 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 
 
 
-@Autonomous(name="Freddy Auto - None", group="Robot")
+@Autonomous(name="Freddy Auto - Move Right", group="Robot")
 //@Disabled
 public class FreddyAutoNone extends LinearOpMode {
 
@@ -118,6 +118,8 @@ public class FreddyAutoNone extends LinearOpMode {
         // Wait for the game to start (driver presses START)
         waitForStart();
 
+        this.DriveReverseForTime(2.0);
+        this.DriveStop();
         this.MoveArmToDownPosition(0.2, 0.2);
 
         sleep(5000);
@@ -158,6 +160,31 @@ public class FreddyAutoNone extends LinearOpMode {
 
                 break;
             }
+        }
+    }
+
+    private void DriveReverseForTime(double Seconds){
+        // Setup a variable for each drive wheel to save power level for telemetry
+        double leftPower = 0.0;
+        double rightPower = 0.0;
+
+        // Tank Mode uses one stick to control each wheel.
+        float driveSpeed = 0.4F;
+        float driveOffset = 0.12F;
+        leftPower  = driveSpeed;
+        rightPower = -driveSpeed;
+
+        leftRearDriveMotor.setPower(leftPower - driveOffset);
+        leftFrontDriveMotor.setPower(leftPower);
+        rightRearDriveMotor.setPower(rightPower);
+        rightFrontDriveMotor.setPower(rightPower - driveOffset);
+
+        runtime.reset();
+        while (opModeIsActive() && (runtime.seconds() < Seconds)) {
+            telemetry.addData("Path", "1-Forward: %4.1f S Elapsed", runtime.seconds());
+            telemetry.addData("Run Time", runtime.seconds());
+
+            telemetry.update();
         }
     }
 
