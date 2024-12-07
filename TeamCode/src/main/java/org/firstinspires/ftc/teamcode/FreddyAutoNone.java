@@ -131,6 +131,11 @@ public class FreddyAutoNone extends LinearOpMode {
         runtime.reset();
 
         while (opModeIsActive() && (runtime.seconds() < 10)) {
+            this.HandleArmSensors();
+
+            telemetry.addData("Touch Sensor Pressed: ", this.isArmButtonPressed);
+            telemetry.update();
+
             armMotorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             armMotorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             ((DcMotorEx) armMotorLeft).setPower(leftMotorPower);
@@ -157,6 +162,9 @@ public class FreddyAutoNone extends LinearOpMode {
     }
 
 
+    private void HandleArmSensors(){
+        this.isArmButtonPressed = armButton.isPressed();
+    }
 
 
 

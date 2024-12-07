@@ -79,13 +79,10 @@ public class FreddyAutoLowBasket extends LinearOpMode {
     private boolean isArmButtonPressed = false;                           //Variable to determine if the slide button is being pressed
 
 
-    private static final int SLIDE_LOW_BASKET  = 2500;                  //The degrees the encoder needs to move the slide motor to get to the low basket
-    private static final int SLIDE_HIGH_BASKET = 5000;                  //The degrees the encoder needs to move the slide motor to get to the high basket
-
-
-
-    private TouchSensor slideButton = null;      // The Viper Slide button at the top of the clip
-
+    private static final int SLIDE_LOW_BASKET  = 2000;                  //The degrees the encoder needs to move the slide motor to get to the low basket
+    private static final int SLIDE_HIGH_BASKET = 15000;                  //The degrees the encoder needs to move the slide motor to get to the high basket
+    private static final int ARM_RAISE = -1700;                         //The degrees to move the arm straight up
+    private static final int ARM_COLLECT_UP = -500;                     //The degrees to move the arm up slightly to get over the bar
 
     // Member variables
     private ElapsedTime runtime = new ElapsedTime();
@@ -118,16 +115,15 @@ public class FreddyAutoLowBasket extends LinearOpMode {
         // Wait for the game to start (driver presses START)
         waitForStart();
 
-        this.CloseHandGripper();
+        //this.CloseHandGripper();
         this.MoveArmToDownPosition(0.2, 0.2);
-        this.DriveForwardForTime(1.2);
-        this.DriveStop();
-        this.MoveArmToLowBasketPosition();
+        this.MoveArmToHighBasketPosition();
+        //this.DriveForwardForTime(1.2)
         this.OpenHandGripper();
         sleep(2000);
-        this.DriveReverseForTime(1.2);
-        this.MoveArmToDownPosition(0.2, 0.2);
-
+//        this.DriveReverseForTime(2.2);
+        //this.DriveStop();
+        this.MoveArmToCollectUpPosition();
         sleep(5000);
     }
 
@@ -137,6 +133,11 @@ public class FreddyAutoLowBasket extends LinearOpMode {
         runtime.reset();
 
         while (opModeIsActive() && (runtime.seconds() < 10)) {
+            this.HandleArmSensors();
+
+            telemetry.addData("Touch Sensor Pressed: ", this.isArmButtonPressed);
+            telemetry.update();
+
             armMotorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             armMotorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             ((DcMotorEx) armMotorLeft).setPower(leftMotorPower);
@@ -162,13 +163,110 @@ public class FreddyAutoLowBasket extends LinearOpMode {
         }
     }
 
+    private void MoveArmToHighBasketPosition(){
+        runtime.reset();
+
+        while (opModeIsActive() && (runtime.seconds() < 10)) {
+            this.HandleArmSensors();
+
+            //Set the drive speed to deposit
+            switch (basketArmMoveStep){
+                case 0:     //First move the arm to a 90 degree position
+                    armMotorLeft.setTargetPosition(ARM_RAISE);
+                    armMotorRight.setTargetPosition(ARM_RAISE);
+
+                    int distanceToTarget = armMotorLeft.getCurrentPosition() - armMotorLeft.getTargetPosition();
+
+                    if (distanceToTarget > 1000)
+                    {
+                        ((DcMotorEx) armMotorLeft).setVelocity(900);
+                        ((DcMotorEx) armMotorRight).setVelocity(900);
+                    }
+                    else {
+                        ((DcMotorEx) armMotorLeft).setVelocity(300);
+                        ((DcMotorEx) armMotorRight).setVelocity(300);
+                    }
+
+                    armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    armMotorRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    if (this.isMotorAtPosition(armMotorRight)){
+                        this.basketArmMoveStep = 1;
+                    }
+
+                    break;
+                case 1:     //Next move the slide out all the way
+                    slideMotor.setTargetPosition(-SLIDE_HIGH_BASKET);
+                    ((DcMotorEx) slideMotor).setVelocity(2000);
+                    slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    if (this.isMotorAtPosition(slideMotor)){
+                        this.currentArmPosition = FreddyAutoLowBasket.armPosition.highBasket;
+                    }
+
+                    break;
+            }
+        }
+    }
+
+    private void MoveArmToCollectUpPosition(){
+        //Lift to collect up position
+        runtime.reset();
+
+        while (opModeIsActive() && (runtime.seconds() < 10)) {
+            this.HandleArmSensors();
+
+
+            telemetry.addData("Touch Sensor Pressed: ", this.isArmButtonPressed);
+            telemetry.addData("Current Arm Position", this.currentArmPosition);
+
+            int currentMotorPosition = armMotorLeft.getCurrentPosition();
+            int targetMotorPosition = armMotorLeft.getTargetPosition();
+            telemetry.addData("***Current Arm Position***", currentMotorPosition);
+            telemetry.addData("Target Arm Position", targetMotorPosition);
+
+
+            //First move the slide in
+            slideMotor.setTargetPosition(0);
+            ((DcMotorEx) slideMotor).setVelocity(2500);
+            slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            if (this.isMotorAtPosition(slideMotor)){
+                //Next, move the arm down
+                armMotorLeft.setTargetPosition(ARM_COLLECT_UP);
+                armMotorRight.setTargetPosition(ARM_COLLECT_UP);
+                ((DcMotorEx) armMotorLeft).setVelocity(500);
+                ((DcMotorEx) armMotorRight).setVelocity(500);
+                armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                armMotorRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                //Next, check if the arm is at the final position
+                if (this.isMotorAtPosition(armMotorLeft)){
+                    //Success
+                    this.currentArmPosition = FreddyAutoLowBasket.armPosition.collectUp;
+                }
+
+                break;
+            }
+        }
+    }
+
+    private void MoveArmToRaisedPosition(){
+
+    }
+
+    private void HandleArmSensors(){
+        this.isArmButtonPressed = armButton.isPressed();
+    }
+
+
     private void MoveArmToLowBasketPosition(){
         runtime.reset();
 
         while (opModeIsActive() && (runtime.seconds() < 10)) {
             switch (basketArmMoveStep){
                 case 0:     //First move the arm to 90 degrees
-                    armMotorLeft.setTargetPosition(3000);
+                    armMotorLeft.setTargetPosition(ARM_RAISE);
                     ((DcMotorEx) armMotorLeft).setVelocity(700);
                     armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
