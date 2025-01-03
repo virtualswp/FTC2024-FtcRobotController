@@ -86,7 +86,8 @@ public class FreddyTeleop extends LinearOpMode {
 
     public DcMotor slideArmMotor = null;
 
-    private CRServo gripperWrist = null;
+    private Servo gripperWrist = null;
+
     private Servo gripperHand = null;
 
     private TouchSensor armButtonFront = null;                   // The REV Robotics touch sensor button on the arm rest tower (Detecting Down Position)
@@ -121,6 +122,12 @@ public class FreddyTeleop extends LinearOpMode {
     private static final int SLIDE_HIGH_BASKET = 3100;                  //The degrees the encoder needs to move the slide motor to get to the high basket
     private static final int ARM_COLLECT_UP = -500;                     //The degrees to move the arm up slightly to get over the bar
     private static final int ARM_COLLECT_DELIVERY = -3700;             //The degrees to move the arm straight up to the delivery up position
+
+    private static final double HAND_OPEN_POSITION = 1.0;               // The servo position for the hand to be fully open.
+
+    private static final double WRIST_DOWN_POSITION = 0.45;             // The servo position for the wrist to be fully down.
+
+    private static final double WRIST_BACK_POSITION = 0.1;              // The servo position for the wrist to be fully back.
 
     //</editor-fold>
 
@@ -165,6 +172,8 @@ public class FreddyTeleop extends LinearOpMode {
         // Check if the arm is starting from home or collect down //
         this.HandleArmSensors();
         this.CheckInitialArmState();
+        this.SetHardwareDefaultPositions();
+
 
 
         /* Run until the driver presses stop */
@@ -420,37 +429,73 @@ public class FreddyTeleop extends LinearOpMode {
     }
 
     private void HandleTeleopWrist(){
-        float leftTrigger = gamepad2.left_trigger;
-        float rightTrigger = gamepad2.right_trigger;
+        //First, define the values of the servo positions
+        final double SERVO_MIN_POS = WRIST_DOWN_POSITION;       //The servo min position (Gripper Closed)
+        final double SERVO_MAX_POS = WRIST_BACK_POSITION;       //The servo max position (Gripper Opened)
+        final double SERVO_MOVE_SPEED = 0.02;                   //The number of ticks to move by
 
-        // Make the motion slower for fine motion
-        float fineTuning = 0.3f;
+        //Next, check if the right trigger is being pushed, if so, tip the wrist down.
+        if (gamepad2.right_bumper){
+            //We don't want to exceed the position the wrist can move, so calculate the minimum current position.
 
-        //Wrist
-        if (leftTrigger > 0){
-            gripperWrist.setPower((double)leftTrigger - fineTuning);
+            double newPosition = gripperWrist.getPosition() + SERVO_MOVE_SPEED;
+
+            if (newPosition <= SERVO_MIN_POS) {
+                //Set the servo new position
+                gripperWrist.setPosition(newPosition);
+            }
+
+            telemetry.addData("newPosition: ", newPosition);
+            telemetry.addData("SERVO_MAX_POS: ", SERVO_MIN_POS);
         }
-        else if (rightTrigger > 0){
-            gripperWrist.setPower(-(double)rightTrigger - fineTuning);
-        }
-        else {
-            gripperWrist.setPower(0.0);
+
+        //Next, check if the left bumper is being pushed, if so, tip the wrist backwards.
+        if (gamepad2.left_bumper){
+            //First calculate the target new position
+            double newPosition = gripperWrist.getPosition() - SERVO_MOVE_SPEED;
+
+            // Next, check to make sure the new position doesn't exceed the minimum position
+            if (newPosition >= SERVO_MAX_POS) {
+                //Set the servo new position
+                gripperWrist.setPosition(newPosition);
+            }
+
+            telemetry.addData("newPosition: ", newPosition);
+            telemetry.addData("SERVO_MAX_POS: ", SERVO_MAX_POS);
         }
     }
 
     private void HandleTeleopHand(){
-        boolean aButton = gamepad2.a;
-        double fullRotationPosition = 0.3;
+        //First, define the values of the servo positions
+        final double SERVO_MIN_POS = 0.5;                   //The servo min position (Gripper Closed)
+        final double SERVO_MAX_POS = HAND_OPEN_POSITION;    //The servo max position (Gripper Opened)
+        final double SERVO_MOVE_SPEED = 0.02;               //The number of ticks to move by
 
-        //Hand
-        if (aButton){
-            //Close gripper
-            gripperHand.setPosition(0.0);
+        //Next, check if the left trigger is being pushed, if so, open the gripper.
+        if (gamepad2.left_trigger > 0){
+            //We don't want to exceed the position the gripper can move, so calculate the minimum current position.
+
+            double minPosition = gripperHand.getPosition() + SERVO_MOVE_SPEED;
+
+            //Next, calculate the new position
+            double newPosition = Math.min(minPosition, SERVO_MAX_POS);
+
+            //Set the servo new position
+            gripperHand.setPosition(newPosition);
         }
-        else {
-            //Open gripper
-            gripperHand.setPosition(fullRotationPosition);
+
+        //Next, check if the right trigger is being pushed, if so, close the gripper.
+        if (gamepad2.right_trigger > 0){
+            //First calculate the target new position
+            double newPosition = gripperHand.getPosition() - SERVO_MOVE_SPEED;
+
+            // Next, check to make sure the new position doesn't exceed the minimum position
+            if (newPosition >= SERVO_MIN_POS) {
+                //Set the servo new position
+                gripperHand.setPosition(newPosition);
+            }
         }
+
     }
 
     private void HandleTeleopTelemetry(){
@@ -777,6 +822,14 @@ public class FreddyTeleop extends LinearOpMode {
         }
     }
 
+    private void SetHardwareDefaultPositions(){
+        /* This method will set any hardware default positions */
+
+        //Set the hand gripper to an open position to start
+        this.gripperHand.setPosition(HAND_OPEN_POSITION);                  //1.0 = All the way open, 0.0 is all the way closed.
+        this.gripperWrist.setPosition(WRIST_DOWN_POSITION);                //0.0 = All the way down, 1.0 is all the way back.
+    }
+
     private boolean isArmAtTargetPosition(){
         return (this.currentArmPosition == this.targetArmPosition);
     }
@@ -809,7 +862,7 @@ public class FreddyTeleop extends LinearOpMode {
         leftRearDriveMotor = hardwareMap.get(DcMotor.class, "leftRearDrive");            //Control Hub Motor Port 2
         rightRearDriveMotor = hardwareMap.get(DcMotor.class, "rightRearDrive");          //Control Hub Motor Port 3
 
-        gripperWrist = hardwareMap.get(CRServo.class, "gripperWrist");                   //Control Hub Servo Port 0
+        gripperWrist = hardwareMap.get(Servo.class, "gripperWrist");                   //Control Hub Servo Port 0
         gripperHand = hardwareMap.get(Servo.class, "gripperHand");                       //Control Hub Servo Port 1
 
         armMotorLeft = hardwareMap.get(DcMotor.class, "armleft");                        //Expansion Hub Motor Port 2
