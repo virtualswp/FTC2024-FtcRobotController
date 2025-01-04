@@ -29,6 +29,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+
 import java.lang.Math;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
@@ -67,7 +68,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
  * The intake wheels are powered by a goBILDA Speed Servo (2000-0025-0003) in Continuous Rotation mode.
  */
 
-@TeleOp(name="Freddy Teleop", group="Robot")
+@TeleOp(name = "Freddy Teleop", group = "Robot")
 //@Disabled
 public class FreddyTeleop extends LinearOpMode {
 
@@ -123,16 +124,24 @@ public class FreddyTeleop extends LinearOpMode {
     //</editor-fold>
 
     //<editor-fold desc="Constants">
-    private static final int SLIDE_LOW_BASKET  = 1500;                  //The degrees the encoder needs to move the slide motor to get to the low basket
+    private static final int SLIDE_LOW_BASKET = 1500;                  //The degrees the encoder needs to move the slide motor to get to the low basket
     private static final int SLIDE_HIGH_BASKET = 2900;                  //The degrees the encoder needs to move the slide motor to get to the high basket
+
+    private static final int SLIDE_COLLECT_OUT = 620;                   //The degrees the encoder needs to move the slide motor to get to the collect out position
+
+    private static final int SLIDE_HOME_RESET = -100;                   // The position to move the slide motor past the home (0) position to account for any variance with the encoder
+
     private static final int ARM_COLLECT_UP = -500;                     //The degrees to move the arm up slightly to get over the bar
     private static final int ARM_COLLECT_DELIVERY = -3700;             //The degrees to move the arm straight up to the delivery up position
+
+    private static final int ARM_HOME_RESET = 400;                     // The position to move the arm motor past the home (0) position to account for any variance with the encoder
 
     private static final double HAND_OPEN_POSITION = 1.0;               // The servo position for the hand to be fully open.
 
     private static final double WRIST_DOWN_POSITION = 0.70;             // The servo position for the wrist to be fully down.
 
     private static final double WRIST_BACK_POSITION = 0.0;              // The servo position for the wrist to be fully back.
+
 
     //</editor-fold>
 
@@ -142,7 +151,9 @@ public class FreddyTeleop extends LinearOpMode {
 
         home,
 
-        collect,
+        collectOut,
+
+        collectUp,
 
         deliveryUp,
 
@@ -194,7 +205,7 @@ public class FreddyTeleop extends LinearOpMode {
         }
     }
 
-    private void HandleTeleopAscent(){
+    private void HandleTeleopAscent() {
         // Setup a variable for each drive wheel to save power level for telemetry
         double leftPower;
         double rightPower;
@@ -210,26 +221,22 @@ public class FreddyTeleop extends LinearOpMode {
             //this.armMotorLeft.setPower(-armPower);
             //this.armMotorRight.setPower(-armPower);
             this.slideMotor.setPower(-0.3);
-        }  else {
+        } else {
             //this.armMotorLeft.setPower(0.0);
             //this.armMotorRight.setPower(0.0);
             this.slideMotor.setPower(0.0);
         }
 
 
-        if (!armSlideSwitch.isPressed())
-        {
-            if (gamepad1.right_bumper){
+        if (!armSlideSwitch.isPressed()) {
+            if (gamepad1.right_bumper) {
                 this.slideArmMotor.setPower(-1.0);
-            }
-            else if (gamepad1.left_bumper){
+            } else if (gamepad1.left_bumper) {
                 this.slideArmMotor.setPower(1.0);
-            }
-            else {
+            } else {
                 this.slideArmMotor.setPower(0.0);
             }
-        }
-        else {
+        } else {
             this.slideArmMotor.setPower(0.0);
         }
 
@@ -240,61 +247,62 @@ public class FreddyTeleop extends LinearOpMode {
 
     }
 
-    private void HandleTeleopArm(){
-        telemetry.addData("Touch Sensor Pressed: ", this.isArmFrontButtonPressed);
-
+    private void HandleTeleopArm() {
         //--------------Arm-----------------------------
-        if (gamepad2.dpad_down){
-            //Move to collect down position
-            this.targetArmPosition = armPosition.home;
-        }
-        else if (gamepad2.dpad_left) {
-            //Move to collect up position
-            this.targetArmPosition = armPosition.collect;
-        }
-        else if (gamepad2.dpad_up) {
-            //Move to the delivery (arm straight up) position
-            this.targetArmPosition = armPosition.deliveryUp;
-        }
+        //NOTE: The arm should only move if the slide is all the way down in the home position.
+        if (this.currentSlidePosition == slidePosition.home) {
+            if (gamepad2.dpad_down) {
+                //Move to collect down position
+                this.targetArmPosition = armPosition.home;
+            } else if (gamepad2.dpad_left) {
+                //Move to collect out position
+                this.targetArmPosition = armPosition.collectOut;
+            } else if (gamepad2.dpad_right) {
+                //Move to collect up position
+                this.targetArmPosition = armPosition.collectUp;
+            } else if (gamepad2.dpad_up) {
+                //Move to the delivery (arm straight up) position
+                this.targetArmPosition = armPosition.deliveryUp;
+            }
 
-        //Next, check if we need to move the arm
-        if (!this.isArmAtTargetPosition()){
-            switch (this.targetArmPosition){
-                case collect:
-                    this.MoveArmToCollectPosition();
-                    break;
-                case home:
-                    this.MoveArmToHomeUpPosition();
-                    break;
-                case deliveryUp:
-                    this.MoveArmToDeliveryUpPosition();
-                    break;
+            //Next, check if we need to move the arm
+            if (!this.isArmAtTargetPosition()) {
+                switch (this.targetArmPosition) {
+                    case collectOut:
+                        this.MoveArmToCollectOutPosition();
+                        break;
+                    case collectUp:
+                        this.MoveArmToCollectUpPosition();
+                        break;
+                    case home:
+                        this.MoveArmToHomePosition();
+                        break;
+                    case deliveryUp:
+                        this.MoveArmToDeliveryUpPosition();
+                        break;
+                }
             }
         }
-
 
         //------------Slide-----------------------------
         //NOTE: Slide motion only should happen when the arm is in the delivery up position - this is for safety
         // of the robot during teleop.
-        if (this.currentArmPosition == armPosition.deliveryUp)
-        {
-            if (gamepad2.y){
+        if (this.currentArmPosition == armPosition.deliveryUp) {
+            if (gamepad2.y) {
                 //Move to high basket
                 this.targetSlidePosition = slidePosition.highBasket;
-            }
-            else if (gamepad2.x){
+            } else if (gamepad2.x) {
                 // Move to the low basket
                 this.targetSlidePosition = slidePosition.lowBasket;
-            }
-            else if (gamepad2.a){
+            } else if (gamepad2.a) {
                 //Move to the home position
                 this.targetSlidePosition = slidePosition.home;
             }
         }
 
         //Next, check if we need to move the slide
-        if (!this.isSlideAtTargetPosition()){
-            switch (this.targetSlidePosition){
+        if (!this.isSlideAtTargetPosition()) {
+            switch (this.targetSlidePosition) {
                 case home:
                     this.MoveSlideToHomePosition();
                     break;
@@ -315,13 +323,13 @@ public class FreddyTeleop extends LinearOpMode {
         this.isArmSlideBackButtonPressed = armSlideButtonRear.isPressed();
     }
 
-    private void HandleTeleopDrive(){
+    private void HandleTeleopDrive() {
         // Setup a variable for each drive wheel to save power level for telemetry
         double leftPower = 0.0;
         double rightPower = 0.0;
 
         double drive = -gamepad1.left_stick_y;
-        double turn  =  gamepad1.right_stick_x;
+        double turn = gamepad1.right_stick_x;
         double strafeRight = gamepad1.right_trigger;
         double strafeLeft = gamepad1.left_trigger;
 
@@ -334,13 +342,11 @@ public class FreddyTeleop extends LinearOpMode {
         boolean collectorModeEnable = gamepad1.b;
         boolean depositModeEnable = gamepad1.a;
 
-        if (collectorModeDisable == true){
+        if (collectorModeDisable == true) {
             this.currentDriveMode = driveMode.normal;
-        }
-        else if (collectorModeEnable == true){
+        } else if (collectorModeEnable == true) {
             this.currentDriveMode = driveMode.collection;
-        }
-        else if (depositModeEnable == true){
+        } else if (depositModeEnable == true) {
             this.currentDriveMode = driveMode.deposit;
         }
 
@@ -349,82 +355,71 @@ public class FreddyTeleop extends LinearOpMode {
             ChassisMotorValues c = new ChassisMotorValues();
             c = this.strafeLeft(strafeLeft);
 
-            if (this.currentDriveMode == driveMode.collection){
+            if (this.currentDriveMode == driveMode.collection) {
                 // Collect drive mode (slow down)
                 float collectorModeFactor = 0.7F;
                 leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
                 leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
                 rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
                 rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
-            }
-            else if (this.currentDriveMode == driveMode.deposit){
+            } else if (this.currentDriveMode == driveMode.deposit) {
                 // Deposit drive mode (really slow down)
                 float collectorModeFactor = 0.3F;
                 leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
                 leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
                 rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
                 rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
-            }
-            else {
+            } else {
                 // Normal Drive mode (full speed)
                 leftRearDriveMotor.setPower(c.leftRear);
                 leftFrontDriveMotor.setPower(c.leftFront);
                 rightRearDriveMotor.setPower(c.rightRear);
                 rightFrontDriveMotor.setPower(c.rightFront);
             }
-        }
-        else if (strafeRight > 0) {
+        } else if (strafeRight > 0) {
             ChassisMotorValues c = new ChassisMotorValues();
             c = this.strafeRight(strafeRight);
 
-            if (this.currentDriveMode == driveMode.collection){
+            if (this.currentDriveMode == driveMode.collection) {
                 // Collect drive mode (slow down)
                 float collectorModeFactor = 0.7F;
                 leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
                 leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
                 rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
                 rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
-            }
-            else if (this.currentDriveMode == driveMode.deposit){
+            } else if (this.currentDriveMode == driveMode.deposit) {
                 // Deposit drive mode (really slow down)
                 float collectorModeFactor = 0.3F;
                 leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
                 leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
                 rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
                 rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
-            }
-            else {
+            } else {
                 // Normal Drive mode (full speed)
                 leftRearDriveMotor.setPower(c.leftRear);
                 leftFrontDriveMotor.setPower(c.leftFront);
                 rightRearDriveMotor.setPower(c.rightRear);
                 rightFrontDriveMotor.setPower(c.rightFront);
             }
-        }
-        else if (gamepad1.left_bumper){
+        } else if (gamepad1.left_bumper) {
             diagonalStrafe(rightUpStrafe, rightDownStrafe, leftUpStrafe, leftDownStrafe);
-        }
-        else
-        {
+        } else {
             // Tank Mode uses one stick to control each wheel.
-            if (this.currentDriveMode == driveMode.collection){
+            if (this.currentDriveMode == driveMode.collection) {
                 // Collect drive mode (slow down)
                 float collectorModeFactor = 0.7F;
-                leftPower  = gamepad1.left_stick_y * collectorModeFactor;
+                leftPower = gamepad1.left_stick_y * collectorModeFactor;
                 rightPower = gamepad1.right_stick_y * collectorModeFactor;
-            }
-            else if (this.currentDriveMode == driveMode.deposit){
+            } else if (this.currentDriveMode == driveMode.deposit) {
                 // Deposit drive mode (really slow down)
                 float collectorModeFactor = 0.3F;
-                leftPower  = gamepad1.left_stick_y * collectorModeFactor;
+                leftPower = gamepad1.left_stick_y * collectorModeFactor;
                 rightPower = gamepad1.right_stick_y * collectorModeFactor;
-            }
-            else {
+            } else {
                 // Normal Drive mode (full speed)
-                leftPower  = gamepad1.left_stick_y ;
-                rightPower = gamepad1.right_stick_y ;
+                leftPower = gamepad1.left_stick_y;
+                rightPower = gamepad1.right_stick_y;
             }
-
 
 
             leftRearDriveMotor.setPower(leftPower);
@@ -434,14 +429,14 @@ public class FreddyTeleop extends LinearOpMode {
         }
     }
 
-    private void HandleTeleopWrist(){
+    private void HandleTeleopWrist() {
         //First, define the values of the servo positions
         final double SERVO_MIN_POS = WRIST_DOWN_POSITION;       //The servo min position (Gripper Closed)
         final double SERVO_MAX_POS = WRIST_BACK_POSITION;       //The servo max position (Gripper Opened)
         final double SERVO_MOVE_SPEED = 0.02;                   //The number of ticks to move by
 
         //Next, check if the right trigger is being pushed, if so, tip the wrist down.
-        if (gamepad2.right_bumper){
+        if (gamepad2.right_bumper) {
             //We don't want to exceed the position the wrist can move, so calculate the minimum current position.
             double newPosition = gripperWrist.getPosition() - SERVO_MOVE_SPEED;
 
@@ -452,7 +447,7 @@ public class FreddyTeleop extends LinearOpMode {
         }
 
         //Next, check if the left bumper is being pushed, if so, tip the wrist backwards.
-        if (gamepad2.left_bumper){
+        if (gamepad2.left_bumper) {
             //First calculate the target new position
             double newPosition = gripperWrist.getPosition() + SERVO_MOVE_SPEED;
 
@@ -464,14 +459,14 @@ public class FreddyTeleop extends LinearOpMode {
         }
     }
 
-    private void HandleTeleopHand(){
+    private void HandleTeleopHand() {
         //First, define the values of the servo positions
         final double SERVO_MIN_POS = 0.5;                   //The servo min position (Gripper Closed)
         final double SERVO_MAX_POS = HAND_OPEN_POSITION;    //The servo max position (Gripper Opened)
         final double SERVO_MOVE_SPEED = 0.02;               //The number of ticks to move by
 
         //Next, check if the left trigger is being pushed, if so, open the gripper.
-        if (gamepad2.left_trigger > 0){
+        if (gamepad2.left_trigger > 0) {
             //We don't want to exceed the position the gripper can move, so calculate the minimum current position.
 
             double minPosition = gripperHand.getPosition() + SERVO_MOVE_SPEED;
@@ -484,7 +479,7 @@ public class FreddyTeleop extends LinearOpMode {
         }
 
         //Next, check if the right trigger is being pushed, if so, close the gripper.
-        if (gamepad2.right_trigger > 0){
+        if (gamepad2.right_trigger > 0) {
             //First calculate the target new position
             double newPosition = gripperHand.getPosition() - SERVO_MOVE_SPEED;
 
@@ -497,17 +492,17 @@ public class FreddyTeleop extends LinearOpMode {
 
     }
 
-    private void HandleTeleopTelemetry(){
+    private void HandleTeleopTelemetry() {
         /* Check to see if our arm and slider is over the current limit, and report via telemetry. */
-        if (((DcMotorEx) armMotorLeft).isOverCurrent()){
+        if (((DcMotorEx) armMotorLeft).isOverCurrent()) {
             telemetry.addLine("LEFT ARM MOTOR EXCEEDED CURRENT LIMIT!");
         }
 
-        if (((DcMotorEx) armMotorRight).isOverCurrent()){
+        if (((DcMotorEx) armMotorRight).isOverCurrent()) {
             telemetry.addLine("RIGHT ARM MOTOR EXCEEDED CURRENT LIMIT!");
         }
 
-        if (((DcMotorEx) slideMotor).isOverCurrent()){
+        if (((DcMotorEx) slideMotor).isOverCurrent()) {
             telemetry.addLine("SLIDE MOTOR EXCEEDED CURRENT LIMIT!");
         }
 
@@ -526,70 +521,34 @@ public class FreddyTeleop extends LinearOpMode {
 
     //<editor-fold desc="Arm Up / Down Methods">
 
-    private void MoveArmToCollectPosition(){
-        // First, check the current position
-        switch (this.currentArmPosition)
-        {
-            case home:
-                // Move the slide out the collect up position using the encoder
-                this.slideMotor.setTargetPosition(620);
-                ((DcMotorEx) this.slideMotor).setVelocity(100);
-                this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-                //Next, check if the arm is at the final position
-                if (this.isMotorAtPosition(slideMotor)){
-                    //Success
-                    this.currentArmPosition = armPosition.collect;
-                }
-
-
-                break;
-            case collect:
-                //This shouldn't happen, it's already in collect up position
-                break;
-            case deliveryUp:
-                // Move the arm up to the collect up position using the encoder
-                this.slideArmMotor.setTargetPosition(ARM_COLLECT_UP);
-
-                // Next, determine where the arm is at so we can throttle the speed of the arm movement
-                int degreesUntilTarget = Math.abs(this.slideArmMotor.getTargetPosition() - this.slideArmMotor.getCurrentPosition());
-
-                if (degreesUntilTarget <= 500)
-                {
-                    // Run at a slow speed
-                    ((DcMotorEx) this.slideArmMotor).setVelocity(200);
-                } else if (degreesUntilTarget <= 1000) {
-                    // Run at a medium speed
-                    ((DcMotorEx) this.slideArmMotor).setVelocity(1000);
-                } else {
-                    //Run at full speed
-                    ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
-                }
+    private void MoveArmToHomePosition() {
+        //First, determine the current position
+        switch (this.currentArmPosition) {
+            case collectUp:
+                // Move the arm down to the down up position using the encoder
+                this.slideArmMotor.setTargetPosition(ARM_HOME_RESET);
+                ((DcMotorEx) this.slideArmMotor).setVelocity(300);
                 this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-                //Next, check if the arm is at the final position
-                if (this.isMotorAtPosition(slideArmMotor)){
+                //Next, check if the arm is at the final position (Either from the encoder or the button press)
+                if (this.isMotorAtPosition(slideArmMotor) || this.isArmFrontButtonPressed) {
+                    //Set the encoder position to the current position to hold the arm up
+                    this.slideArmMotor.setTargetPosition(this.slideArmMotor.getCurrentPosition());
+                    this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
                     //Success
-                    this.currentArmPosition = armPosition.collect;
+                    this.currentArmPosition = armPosition.home;
                 }
 
                 break;
-        }
-    }
-
-    private void MoveArmToHomeUpPosition(){
-        //First, determine the current position
-        switch (this.currentArmPosition)
-        {
-            case collect:
-
+            case collectOut:
                 // Move the slide in the home position using the encoder until the button is pressed
-                this.slideMotor.setTargetPosition(-20);
-                ((DcMotorEx) this.slideMotor).setVelocity(100);
+                this.slideMotor.setTargetPosition(SLIDE_HOME_RESET);
+                ((DcMotorEx) this.slideMotor).setVelocity(300);
                 this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 //Next, check if the arm is at the final position
-                if (this.isMotorAtPosition(slideMotor) || this.isArmSlideBackButtonPressed){
+                if (this.isMotorAtPosition(slideMotor) || this.isArmSlideBackButtonPressed) {
                     //Set the encoder position to the current position to hold the arm up
                     this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
                     this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -601,13 +560,12 @@ public class FreddyTeleop extends LinearOpMode {
                 break;
             case deliveryUp:
                 // Move the arm down to the down up position using the encoder
-                this.slideArmMotor.setTargetPosition(-20);
+                this.slideArmMotor.setTargetPosition(ARM_HOME_RESET);
 
                 // Next, determine where the arm is at so we can throttle the speed of the arm movement
                 int degreesUntilTarget = Math.abs(this.slideArmMotor.getTargetPosition() - this.slideArmMotor.getCurrentPosition());
 
-                if (degreesUntilTarget <= 500)
-                {
+                if (degreesUntilTarget <= 500) {
                     // Run at a slow speed
                     ((DcMotorEx) this.slideArmMotor).setVelocity(300);
                 } else if (degreesUntilTarget <= 1000) {
@@ -621,7 +579,7 @@ public class FreddyTeleop extends LinearOpMode {
                 this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 //Next, check if the arm is at the final position (Either from the encoder or the button press)
-                if (this.isMotorAtPosition(slideArmMotor) || this.isArmFrontButtonPressed){
+                if (this.isMotorAtPosition(slideArmMotor) || this.isArmFrontButtonPressed) {
                     //Set the encoder position to the current position to hold the arm up
                     this.slideArmMotor.setTargetPosition(this.slideArmMotor.getCurrentPosition());
                     this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -638,21 +596,180 @@ public class FreddyTeleop extends LinearOpMode {
         }
     }
 
-    private void MoveArmToDeliveryUpPosition(){
+    private void MoveArmToCollectOutPosition() {
         // First, check the current position
-        switch (this.currentArmPosition)
-        {
+        switch (this.currentArmPosition) {
             case home:
-                //NOTE Same code for collect down and collect up, don't add a break statement
-            case collect:
+                // Move the slide out the collect up position using the encoder
+                this.slideMotor.setTargetPosition(SLIDE_COLLECT_OUT);
+                ((DcMotorEx) this.slideMotor).setVelocity(400);
+                this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                //Next, check if the arm is at the final position
+                if (this.isMotorAtPosition(slideMotor)) {
+                    //Success
+                    this.currentArmPosition = armPosition.collectOut;
+                }
+
+                break;
+            case collectOut:
+                //This shouldn't happen, it's already in collect up position
+                break;
+            case collectUp:
+                // Move the arm down to the down up position using the encoder
+                this.slideArmMotor.setTargetPosition(ARM_HOME_RESET);
+                ((DcMotorEx) this.slideArmMotor).setVelocity(400);
+                this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                //Next, check if the arm is at the final position (Either from the encoder or the button press)
+                if (this.isMotorAtPosition(slideArmMotor) || this.isArmFrontButtonPressed) {
+                    //Set the encoder position to the current position to hold the arm up
+                    this.slideArmMotor.setTargetPosition(this.slideArmMotor.getCurrentPosition());
+                    this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+                    // Move the slide out the collect up position using the encoder
+                    this.slideMotor.setTargetPosition(SLIDE_COLLECT_OUT);
+                    ((DcMotorEx) this.slideMotor).setVelocity(300);
+                    this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position
+                    if (this.isMotorAtPosition(slideMotor)) {
+                        //Success
+                        this.currentArmPosition = armPosition.collectOut;
+                    }
+                }
+
+                break;
+            case deliveryUp:
+                // Move the arm up to the collect up position using the encoder
+                this.slideArmMotor.setTargetPosition(ARM_HOME_RESET);
+
+                // Next, determine where the arm is at so we can throttle the speed of the arm movement
+                int degreesUntilTarget = Math.abs(this.slideArmMotor.getTargetPosition() - this.slideArmMotor.getCurrentPosition());
+
+                if (degreesUntilTarget <= 1000) {
+                    // Run at a slow speed
+                    ((DcMotorEx) this.slideArmMotor).setVelocity(300);
+                } else if (degreesUntilTarget <= 1500) {
+                    // Run at a medium speed
+                    ((DcMotorEx) this.slideArmMotor).setVelocity(500);
+                } else {
+                    //Run at full speed
+                    ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
+                }
+                this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                //Next, check if the arm is at the final position
+                if (this.isMotorAtPosition(slideArmMotor) || this.isArmFrontButtonPressed) {
+                    //Set the encoder position to the current position to hold the arm up
+                    this.slideArmMotor.setTargetPosition(this.slideArmMotor.getCurrentPosition());
+                    this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    // Move the slide out the collect up position using the encoder
+                    this.slideMotor.setTargetPosition(SLIDE_COLLECT_OUT);
+                    ((DcMotorEx) this.slideMotor).setVelocity(400);
+                    this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position
+                    if (this.isMotorAtPosition(slideMotor)) {
+                        //Success
+                        this.currentArmPosition = armPosition.collectOut;
+                    }
+                }
+
+                break;
+        }
+    }
+
+    private void MoveArmToCollectUpPosition() {
+        //First, determine the current position
+        switch (this.currentArmPosition) {
+            case collectUp:
+                //Already in position, this shouldn't happen.
+                break;
+            case collectOut:
+                //First, move the arm up slightly to clear the submersible bar
+                this.slideArmMotor.setTargetPosition(ARM_COLLECT_UP);
+                ((DcMotorEx) this.slideArmMotor).setVelocity(700);
+                this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                //Next, check if the arm is at the final position
+                if (this.isMotorAtPosition(slideArmMotor)) {
+                    // Move the slide in the home position using the encoder until the button is pressed
+                    this.slideMotor.setTargetPosition(-20);
+                    ((DcMotorEx) this.slideMotor).setVelocity(400);
+                    this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position
+                    if (this.isMotorAtPosition(slideMotor) || this.isArmSlideBackButtonPressed) {
+                        //Set the encoder position to the current position to hold the arm up
+                        this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
+                        this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                        //Success
+                        this.currentArmPosition = armPosition.collectUp;
+                    }
+                }
+
+                break;
+            case deliveryUp:
+                //First, move the arm up slightly to clear the submersible bar
+                this.slideArmMotor.setTargetPosition(ARM_COLLECT_UP);
+                ((DcMotorEx) this.slideArmMotor).setVelocity(700);
+                this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                //Next, check if the arm is at the final position
+                if (this.isMotorAtPosition(slideArmMotor)) {
+                    //Success
+                    this.currentArmPosition = armPosition.collectUp;
+                }
+
+                break;
+            case home:
+                //First, move the arm up slightly to clear the submersible bar
+                this.slideArmMotor.setTargetPosition(ARM_COLLECT_UP);
+
+                // Next, determine where the arm is at so we can throttle the speed of the arm movement
+                int degreesUntilTarget = Math.abs(this.slideArmMotor.getTargetPosition() - this.slideArmMotor.getCurrentPosition());
+
+                if (degreesUntilTarget <= 500) {
+                    // Run at a slow speed
+                    ((DcMotorEx) this.slideArmMotor).setVelocity(300);
+                } else if (degreesUntilTarget <= 1000) {
+                    // Run at a medium speed
+                    ((DcMotorEx) this.slideArmMotor).setVelocity(500);
+                } else {
+                    //Run at full speed
+                    ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
+                }
+
+                this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                //Next, check if the arm is at the final position
+                if (this.isMotorAtPosition(slideArmMotor)) {
+                    //Success
+                    this.currentArmPosition = armPosition.collectUp;
+                }
+
+                break;
+        }
+    }
+
+
+    private void MoveArmToDeliveryUpPosition() {
+        // First, check the current position
+        switch (this.currentArmPosition) {
+            case home:
+                //NOTE Same code to go to Delivery Up from Collect Up and Home, don't add a break statement
+            case collectUp: {
                 // Move the arm up to the delivery up position using the encoder
                 this.slideArmMotor.setTargetPosition(ARM_COLLECT_DELIVERY);
 
                 // Next, determine where the arm is at so we can throttle the speed of the arm movement
                 int degreesUntilTarget = Math.abs(this.slideArmMotor.getTargetPosition() - this.slideArmMotor.getCurrentPosition());
 
-                if (degreesUntilTarget <= 500)
-                {
+                if (degreesUntilTarget <= 500) {
                     // Run at a slow speed
                     ((DcMotorEx) this.slideArmMotor).setVelocity(350);
                 } else if (degreesUntilTarget <= 1000) {
@@ -666,7 +783,7 @@ public class FreddyTeleop extends LinearOpMode {
                 this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 //Next, check if the arm is at the final position (Either from the encoder or the button press)
-                if (this.isMotorAtPosition(slideArmMotor) || this.isArmBackButtonPressed){
+                if (this.isMotorAtPosition(slideArmMotor) || this.isArmBackButtonPressed) {
                     //Set the encoder position to the current position to hold the arm up
                     this.slideArmMotor.setTargetPosition(this.slideArmMotor.getCurrentPosition());
                     this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -674,8 +791,53 @@ public class FreddyTeleop extends LinearOpMode {
                     //Success
                     this.currentArmPosition = armPosition.deliveryUp;
                 }
+            }
+            break;
 
-                break;
+            case collectOut: {
+                //First move the slide in using the encoder until the back slide button is pressed
+                this.slideMotor.setTargetPosition(SLIDE_HOME_RESET);
+                ((DcMotorEx) this.slideMotor).setVelocity(300);
+                this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                //Next, check if the arm is at the final position
+                if (this.isMotorAtPosition(slideMotor) || this.isArmSlideBackButtonPressed) {
+                    //Set the encoder position to the current position to reset the slide to 0
+                    this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
+                    this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    // Move the arm up to the delivery up position using the encoder
+                    this.slideArmMotor.setTargetPosition(ARM_COLLECT_DELIVERY);
+
+                    // Next, determine where the arm is at so we can throttle the speed of the arm movement
+                    int degreesUntilTarget = Math.abs(this.slideArmMotor.getTargetPosition() - this.slideArmMotor.getCurrentPosition());
+
+                    if (degreesUntilTarget <= 500) {
+                        // Run at a slow speed
+                        ((DcMotorEx) this.slideArmMotor).setVelocity(350);
+                    } else if (degreesUntilTarget <= 1000) {
+                        // Run at a medium speed
+                        ((DcMotorEx) this.slideArmMotor).setVelocity(650);
+                    } else {
+                        //Run at full speed
+                        ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
+                    }
+
+                    this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position (Either from the encoder or the button press)
+                    if (this.isMotorAtPosition(slideArmMotor) || this.isArmBackButtonPressed) {
+                        //Set the encoder position to the current position to hold the arm up
+                        this.slideArmMotor.setTargetPosition(this.slideArmMotor.getCurrentPosition());
+                        this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                        //Success
+                        this.currentArmPosition = armPosition.deliveryUp;
+                    }
+                }
+            }
+            break;
+
             case deliveryUp:
                 //This shouldn't happen, it's already in delivery up position
                 break;
@@ -686,25 +848,24 @@ public class FreddyTeleop extends LinearOpMode {
 
     //<editor-fold desc="Basket Methods">
 
-    private void MoveSlideToHomePosition(){
+    private void MoveSlideToHomePosition() {
         slideMotor.setTargetPosition(0);
         ((DcMotorEx) slideMotor).setVelocity(1500);
         slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        if (this.isMotorAtPosition(slideMotor)){
+        if (this.isMotorAtPosition(slideMotor)) {
             this.currentSlidePosition = slidePosition.home;
         }
     }
 
-    private void MoveSlideToHighBasketPosition(){
+    private void MoveSlideToHighBasketPosition() {
         slideMotor.setTargetPosition(SLIDE_HIGH_BASKET);
         slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         // Next, determine where the side is at so we can throttle the speed of the slide movement
         int degreesUntilTarget = Math.abs(this.slideMotor.getTargetPosition() - this.slideMotor.getCurrentPosition());
 
-        if (degreesUntilTarget <= 500)
-        {
+        if (degreesUntilTarget <= 500) {
             // Run at a slow speed
             ((DcMotorEx) this.slideMotor).setVelocity(350);
         } else if (degreesUntilTarget <= 1000) {
@@ -715,7 +876,7 @@ public class FreddyTeleop extends LinearOpMode {
             ((DcMotorEx) this.slideMotor).setVelocity(3000);
         }
 
-        if (this.isMotorAtPosition(slideMotor) || this.armSlideSwitch.isPressed()){
+        if (this.isMotorAtPosition(slideMotor) || this.armSlideSwitch.isPressed()) {
             //Set the encoder position to the current position to hold the slide up
             this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
             this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -724,19 +885,19 @@ public class FreddyTeleop extends LinearOpMode {
         }
     }
 
-    private void MoveSlideToLowBasketPosition(){
+    private void MoveSlideToLowBasketPosition() {
         //First determine the current
 
         slideMotor.setTargetPosition(SLIDE_LOW_BASKET);
         ((DcMotorEx) slideMotor).setVelocity(1500);
         slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        if (this.isMotorAtPosition(slideMotor)){
+        if (this.isMotorAtPosition(slideMotor)) {
             this.currentSlidePosition = slidePosition.lowBasket;
         }
     }
 
-    private void MoveSlideToEndGamePosition(){
+    private void MoveSlideToEndGamePosition() {
 //        switch (basketArmMoveStep){
 //            case 0:     //First move the arm up 1/2 way
 //                armMotorLeft.setTargetPosition(900);
@@ -774,6 +935,7 @@ public class FreddyTeleop extends LinearOpMode {
 
         return result;
     }
+
     public ChassisMotorValues strafeLeft(double strafePower) {
         ChassisMotorValues result = new ChassisMotorValues();
 
@@ -784,25 +946,21 @@ public class FreddyTeleop extends LinearOpMode {
 
         return result;
     }
+
     public void diagonalStrafe(boolean rightUpStrafe, boolean rightDownStrafe, boolean leftUpStrafe, boolean leftDownStrafe) {
-        if (rightUpStrafe == true)
-        {
+        if (rightUpStrafe == true) {
             leftFrontDriveMotor.setPower(0.45);
             rightRearDriveMotor.setPower(-0.45);
-        }
-        else if (rightDownStrafe == true){
+        } else if (rightDownStrafe == true) {
             rightFrontDriveMotor.setPower(-0.45);
             leftRearDriveMotor.setPower(0.45);
-        }
-        else if (leftUpStrafe == true){
+        } else if (leftUpStrafe == true) {
             rightFrontDriveMotor.setPower(0.45);
             leftRearDriveMotor.setPower(-0.45);
-        }
-        else if (leftDownStrafe == true){
+        } else if (leftDownStrafe == true) {
             leftFrontDriveMotor.setPower(-0.45);
             rightRearDriveMotor.setPower(0.45);
-        }
-        else {
+        } else {
             leftFrontDriveMotor.setPower(0);
             rightRearDriveMotor.setPower(0);
             rightFrontDriveMotor.setPower(0);
@@ -820,7 +978,7 @@ public class FreddyTeleop extends LinearOpMode {
         }
     }
 
-    private void SetHardwareDefaultPositions(){
+    private void SetHardwareDefaultPositions() {
         /* This method will set any hardware default positions */
 
         //Set the hand gripper to an open position to start
@@ -828,17 +986,16 @@ public class FreddyTeleop extends LinearOpMode {
         this.gripperWrist.setPosition(WRIST_BACK_POSITION);                //0.0 = All the way down, 1.0 is all the way back.
     }
 
-    private boolean isArmAtTargetPosition(){
+    private boolean isArmAtTargetPosition() {
         return (this.currentArmPosition == this.targetArmPosition);
     }
 
-    private boolean isSlideAtTargetPosition(){
+    private boolean isSlideAtTargetPosition() {
         return (this.currentSlidePosition == this.targetSlidePosition);
     }
 
-    public boolean isMotorAtPosition(DcMotor motor)
-    {
-        if (!motor.isBusy()){
+    public boolean isMotorAtPosition(DcMotor motor) {
+        if (!motor.isBusy()) {
             telemetry.addData("motor: ", motor.isBusy());
             return true;
         }
@@ -853,7 +1010,7 @@ public class FreddyTeleop extends LinearOpMode {
         return error <= varianceFactor;
     }
 
-    private void ConfigureHardware(){
+    private void ConfigureHardware() {
         /* Define and Initialize Motors */
         leftFrontDriveMotor = hardwareMap.get(DcMotor.class, "leftFrontDrive");          //Control Hub Motor Port 0
         rightFrontDriveMotor = hardwareMap.get(DcMotor.class, "rightFrontDrive");        //Control Hub Motor Port 1
@@ -897,10 +1054,10 @@ public class FreddyTeleop extends LinearOpMode {
         slideArmMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
-        ((DcMotorEx) armMotorLeft).setCurrentAlert(5,CurrentUnit.AMPS);
-        ((DcMotorEx) armMotorRight).setCurrentAlert(5,CurrentUnit.AMPS);
-        ((DcMotorEx) slideMotor).setCurrentAlert(5,CurrentUnit.AMPS);
-        ((DcMotorEx) slideArmMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+        ((DcMotorEx) armMotorLeft).setCurrentAlert(5, CurrentUnit.AMPS);
+        ((DcMotorEx) armMotorRight).setCurrentAlert(5, CurrentUnit.AMPS);
+        ((DcMotorEx) slideMotor).setCurrentAlert(5, CurrentUnit.AMPS);
+        ((DcMotorEx) slideArmMotor).setCurrentAlert(5, CurrentUnit.AMPS);
 
 
         //Set the arm motor's motor encoder to 0
