@@ -142,6 +142,7 @@ public class FreddyTeleop extends LinearOpMode {
 
     private static final double WRIST_BACK_POSITION = 0.0;              // The servo position for the wrist to be fully back.
 
+    private static final double WRIST_DELIVERY_POSITION = 0.30;         // The servo position for the wrist when delivering to the baskets
 
     //</editor-fold>
 
@@ -461,7 +462,7 @@ public class FreddyTeleop extends LinearOpMode {
 
     private void HandleTeleopHand() {
         //First, define the values of the servo positions
-        final double SERVO_MIN_POS = 0.5;                   //The servo min position (Gripper Closed)
+        final double SERVO_MIN_POS = 0.52;                   //The servo min position (Gripper Closed)
         final double SERVO_MAX_POS = HAND_OPEN_POSITION;    //The servo max position (Gripper Opened)
         final double SERVO_MOVE_SPEED = 0.02;               //The number of ticks to move by
 
@@ -756,13 +757,15 @@ public class FreddyTeleop extends LinearOpMode {
         }
     }
 
-
     private void MoveArmToDeliveryUpPosition() {
         // First, check the current position
         switch (this.currentArmPosition) {
             case home:
                 //NOTE Same code to go to Delivery Up from Collect Up and Home, don't add a break statement
             case collectUp: {
+                //Move the wrist to the delivery position
+                this.gripperWrist.setPosition(WRIST_DELIVERY_POSITION);
+
                 // Move the arm up to the delivery up position using the encoder
                 this.slideArmMotor.setTargetPosition(ARM_COLLECT_DELIVERY);
 
@@ -795,7 +798,10 @@ public class FreddyTeleop extends LinearOpMode {
             break;
 
             case collectOut: {
-                //First move the slide in using the encoder until the back slide button is pressed
+                //Move the wrist to the delivery position
+                this.gripperWrist.setPosition(WRIST_DELIVERY_POSITION);
+
+                //Move the slide in using the encoder until the back slide button is pressed
                 this.slideMotor.setTargetPosition(SLIDE_HOME_RESET);
                 ((DcMotorEx) this.slideMotor).setVelocity(300);
                 this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -849,6 +855,9 @@ public class FreddyTeleop extends LinearOpMode {
     //<editor-fold desc="Basket Methods">
 
     private void MoveSlideToHomePosition() {
+        //Move the wrist to the delivery position
+        this.gripperWrist.setPosition(WRIST_DOWN_POSITION);
+
         slideMotor.setTargetPosition(0);
         ((DcMotorEx) slideMotor).setVelocity(1500);
         slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -873,7 +882,7 @@ public class FreddyTeleop extends LinearOpMode {
             ((DcMotorEx) this.slideMotor).setVelocity(650);
         } else {
             //Run at full speed
-            ((DcMotorEx) this.slideMotor).setVelocity(3000);
+            ((DcMotorEx) this.slideMotor).setVelocity(2000);
         }
 
         if (this.isMotorAtPosition(slideMotor) || this.armSlideSwitch.isPressed()) {
