@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 
 
 
-@Autonomous(name="Freddy Auto - Reset", group="Robot")
+@Autonomous(name="Pre-Match", group="Robot")
 //@Disabled
 public class FreddyAutoReset extends LinearOpMode {
 
@@ -72,10 +72,10 @@ public class FreddyAutoReset extends LinearOpMode {
 
     private static final int ARM_HOME_RESET = 400;                     // The position to move the arm motor past the home (0) position to account for any variance with the encoder
 
-    private static final double HAND_OPEN_POSITION = 1.0;               // The servo position for the hand to be fully open.
+    private static final double HAND_OPEN_POSITION = 0.0;               // The servo position for the hand to be fully open.
 
-    //Napolean = 0.52, Freddy = 0.54
-    private static final double HAND_CLOSED_POSITION = 0.50;            // The servo position for the hand to be fully closed.
+    //Napoleon = 0.57, Freddy = 0.64
+    private static final double HAND_CLOSED_POSITION = 0.64;            // The servo position for the hand to be fully closed.
 
     // Napolean = 0.70, Freddy = 0.67
     private static final double WRIST_DOWN_POSITION = 0.67;             // The servo position for the wrist to be fully down.
@@ -157,7 +157,7 @@ public class FreddyAutoReset extends LinearOpMode {
         /* This method will set any hardware default positions */
 
         //Set the hand gripper to an open position to start
-        this.gripperHand.setPosition(HAND_OPEN_POSITION);                  //1.0 = All the way open, 0.0 is all the way closed.
+        this.gripperHand.setPosition(HAND_CLOSED_POSITION);                //0.0 = All the way open, 1.0 is all the way closed.
         this.gripperWrist.setPosition(WRIST_BACK_POSITION);                //0.0 = All the way down, 1.0 is all the way back.
     }
 
