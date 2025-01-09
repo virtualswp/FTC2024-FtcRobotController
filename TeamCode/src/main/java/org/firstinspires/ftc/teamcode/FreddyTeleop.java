@@ -110,7 +110,7 @@ public class FreddyTeleop extends LinearOpMode {
 
     private slidePosition targetSlidePosition = slidePosition.home;             // The target slide position
 
-    private driveMode currentDriveMode = driveMode.collection;              //The current drive mode
+    private driveMode currentDriveMode = driveMode.normal;              //The current drive mode
 
     private boolean isArmFrontButtonPressed = false;                     //Variable to determine if the front arm button is being pressed
 
@@ -126,11 +126,15 @@ public class FreddyTeleop extends LinearOpMode {
     //<editor-fold desc="Constants">
 
     private static final double ENCODER_ZERO_POWER = 0.1;               //The amount of power to have the motor use to brake (hold) the motor position.
-    private static final int SLIDE_LOW_BASKET = 1500;                  //The degrees the encoder needs to move the slide motor to get to the low basket
-    private static final int SLIDE_HIGH_BASKET = 2900;                  //The degrees the encoder needs to move the slide motor to get to the high basket
+    private static final int SLIDE_LOW_BASKET = 1500;                   //The degrees the encoder needs to move the slide motor to get to the low basket
+    private static final int SLIDE_HIGH_BASKET = 3700;                  //The degrees the encoder needs to move the slide motor to get to the high basket
+
+    private static final int SLIDE_HIGH_BASKET_MIN = 3550;              //The minimum height the magnetic switch sensor can be valid at
 
     //Napoleon = 450, Freddy = 550
     private static final int SLIDE_COLLECT_OUT = 550;                   //The degrees the encoder needs to move the slide motor to get to the collect out position
+
+    private static final int SLIDE_COLLECT_OUT_SPEED = 700;             //The velocity to move the slide out to collect out.
 
     private static final int SLIDE_HOME_RESET = -200;                   // The position to move the slide motor past the home (0) position to account for any variance with the encoder
 
@@ -151,6 +155,7 @@ public class FreddyTeleop extends LinearOpMode {
     private static final double WRIST_DELIVERY_POSITION = 0.30;         // The servo position for the wrist when delivering to the baskets
 
     private static final double WRIST_COLLECT_UP_POSITION = 0.5;        // The servo position for the wrist when moving to collect up position (slightly back to go over the bar)
+
 
 
     //</editor-fold>
@@ -179,9 +184,9 @@ public class FreddyTeleop extends LinearOpMode {
     }
 
     private enum driveMode {
+        fast,
         normal,
-        collection,
-        deposit
+        slow
     }
     //</editor-fold>
 
@@ -216,20 +221,24 @@ public class FreddyTeleop extends LinearOpMode {
     }
 
     private void HandleTeleopAscent() {
-        // Setup a variable for each drive wheel to save power level for telemetry
-        double leftPower;
-        double rightPower;
+        final double rightArmPower = 0.8;
+        final double leftArmPower = 0.8;
 
-        final double armPower = -0.5;
-
+        //Left Lift Arm
         if (gamepad1.dpad_up) {
-            this.armMotorLeft.setPower(armPower);
-            this.armMotorRight.setPower(armPower);
+            this.armMotorLeft.setPower(-leftArmPower);
         } else if (gamepad1.dpad_down) {
-            this.armMotorLeft.setPower(-armPower);
-            this.armMotorRight.setPower(-armPower);
-        } else {
+            this.armMotorLeft.setPower(leftArmPower);
+        } else if (!gamepad1.dpad_up && !gamepad1.dpad_down){
             this.armMotorLeft.setPower(0.0);
+        }
+
+        //Right lift arm
+        if (gamepad1.y) {
+            this.armMotorRight.setPower(rightArmPower);
+        } else if (gamepad1.a) {
+            this.armMotorRight.setPower(-rightArmPower);
+        } else if (!gamepad1.y && !gamepad1.a){
             this.armMotorRight.setPower(0.0);
         }
     }
@@ -325,16 +334,16 @@ public class FreddyTeleop extends LinearOpMode {
         boolean leftUpStrafe = gamepad1.dpad_left;
         boolean leftDownStrafe = gamepad1.dpad_down;
 
-        boolean collectorModeDisable = gamepad1.y;
-        boolean collectorModeEnable = gamepad1.b;
-        boolean depositModeEnable = gamepad1.a;
+        //Speed settings
+        this.currentDriveMode = driveMode.normal;
 
-        if (collectorModeDisable == true) {
-            this.currentDriveMode = driveMode.normal;
-        } else if (collectorModeEnable == true) {
-            this.currentDriveMode = driveMode.collection;
-        } else if (depositModeEnable == true) {
-            this.currentDriveMode = driveMode.deposit;
+        if (gamepad1.left_bumper)
+        {
+            this.currentDriveMode = driveMode.slow;
+        }
+        else if (gamepad1.right_bumper)
+        {
+            this.currentDriveMode = driveMode.fast;
         }
 
 
@@ -342,14 +351,14 @@ public class FreddyTeleop extends LinearOpMode {
             ChassisMotorValues c = new ChassisMotorValues();
             c = this.strafeLeft(strafeLeft);
 
-            if (this.currentDriveMode == driveMode.collection) {
+            if (this.currentDriveMode == driveMode.normal) {
                 // Collect drive mode (slow down)
                 float collectorModeFactor = 0.7F;
                 leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
                 leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
                 rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
                 rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
-            } else if (this.currentDriveMode == driveMode.deposit) {
+            } else if (this.currentDriveMode == driveMode.slow) {
                 // Deposit drive mode (really slow down)
                 float collectorModeFactor = 0.3F;
                 leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
@@ -367,14 +376,14 @@ public class FreddyTeleop extends LinearOpMode {
             ChassisMotorValues c = new ChassisMotorValues();
             c = this.strafeRight(strafeRight);
 
-            if (this.currentDriveMode == driveMode.collection) {
+            if (this.currentDriveMode == driveMode.normal) {
                 // Collect drive mode (slow down)
                 float collectorModeFactor = 0.7F;
                 leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
                 leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
                 rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
                 rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
-            } else if (this.currentDriveMode == driveMode.deposit) {
+            } else if (this.currentDriveMode == driveMode.slow) {
                 // Deposit drive mode (really slow down)
                 float collectorModeFactor = 0.3F;
                 leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
@@ -388,18 +397,18 @@ public class FreddyTeleop extends LinearOpMode {
                 rightRearDriveMotor.setPower(c.rightRear);
                 rightFrontDriveMotor.setPower(c.rightFront);
             }
-        } else if (gamepad1.left_bumper) {
-            diagonalStrafe(rightUpStrafe, rightDownStrafe, leftUpStrafe, leftDownStrafe);
+//        } else if (gamepad1.left_bumper) {
+//            diagonalStrafe(rightUpStrafe, rightDownStrafe, leftUpStrafe, leftDownStrafe);
         } else {
             // Tank Mode uses one stick to control each wheel.
-            if (this.currentDriveMode == driveMode.collection) {
+            if (this.currentDriveMode == driveMode.normal) {
                 // Collect drive mode (slow down)
                 float collectorModeFactor = 0.7F;
                 leftPower = gamepad1.left_stick_y * collectorModeFactor;
                 rightPower = gamepad1.right_stick_y * collectorModeFactor;
-            } else if (this.currentDriveMode == driveMode.deposit) {
+            } else if (this.currentDriveMode == driveMode.slow) {
                 // Deposit drive mode (really slow down)
-                float collectorModeFactor = 0.3F;
+                float collectorModeFactor = 0.4F;
                 leftPower = gamepad1.left_stick_y * collectorModeFactor;
                 rightPower = gamepad1.right_stick_y * collectorModeFactor;
             } else {
@@ -622,7 +631,7 @@ public class FreddyTeleop extends LinearOpMode {
 
                 // Move the slide out the collect up position using the encoder
                 this.slideMotor.setTargetPosition(SLIDE_COLLECT_OUT);
-                ((DcMotorEx) this.slideMotor).setVelocity(400);
+                ((DcMotorEx) this.slideMotor).setVelocity(SLIDE_COLLECT_OUT_SPEED);
                 this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 //Next, check if the arm is at the final position
@@ -642,7 +651,7 @@ public class FreddyTeleop extends LinearOpMode {
 
                 // Move the slide out the collect out position using the encoder
                 this.slideMotor.setTargetPosition(SLIDE_COLLECT_OUT);
-                ((DcMotorEx) this.slideMotor).setVelocity(300);
+                ((DcMotorEx) this.slideMotor).setVelocity(SLIDE_COLLECT_OUT_SPEED);
                 this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 //Next, check if the arm is at the final position
@@ -683,7 +692,7 @@ public class FreddyTeleop extends LinearOpMode {
 
                     // Move the slide out the collect up position using the encoder
                     this.slideMotor.setTargetPosition(SLIDE_COLLECT_OUT);
-                    ((DcMotorEx) this.slideMotor).setVelocity(400);
+                    ((DcMotorEx) this.slideMotor).setVelocity(SLIDE_COLLECT_OUT_SPEED);
                     this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                     //Next, check if the arm is at the final position
@@ -907,12 +916,13 @@ public class FreddyTeleop extends LinearOpMode {
             ((DcMotorEx) this.slideMotor).setVelocity(2000);
         }
 
-        if (this.isMotorAtPosition(slideMotor) || this.armSlideSwitch.isPressed()) {
-            //Set the encoder position to the current position to hold the slide up
-            this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
-            this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        if (this.isMotorAtPosition(slideMotor) ||
+                (this.isArmSlideSwitchPressed && (slideMotor.getCurrentPosition() >= SLIDE_HIGH_BASKET_MIN))) {
+                //Set the encoder position to the current position to hold the slide up
+                this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
+                this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-            this.currentSlidePosition = slidePosition.highBasket;
+                this.currentSlidePosition = slidePosition.highBasket;
         }
     }
 
