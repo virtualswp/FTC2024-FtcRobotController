@@ -1,5 +1,5 @@
 package org.firstinspires.ftc.teamcode;
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
 
 //Imports from auto example code
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.TouchSensor;
-
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 
 @Autonomous(name="Pre-Match", group="Robot")
@@ -102,42 +102,7 @@ public class FreddyAutoReset extends LinearOpMode {
 
         this.HandleArmSensors();
         this.SetHardwareDefaultPositions();
-
-
-        boolean hardwareReset = false;
-
-        while (hardwareReset == false){
-            this.HandleArmSensors();
-
-            //Check if the arm is fully down
-            if (!this.isArmFrontButtonPressed){
-                //Move the motor down
-                this.slideArmMotor.setPower(0.1);
-            }
-            else{
-                //Stop the motor
-                this.slideArmMotor.setPower(0.0);
-            }
-
-            //Check if the slide is fully back
-            if (!this.isArmSlideBackButtonPressed){
-                //Move the motor backwards
-                this.slideMotor.setPower(-0.2);
-            }
-            else{
-                //Stop the motor
-                this.slideMotor.setPower(0.0);
-            }
-
-            //Add telemetry to just see sensors
-            telemetry.addData("isArmSlideBackButtonPressed", isArmSlideBackButtonPressed);
-            telemetry.addData("isArmFrontButtonPressed", isArmFrontButtonPressed);
-
-            //Check if everything is reset
-            if (this.isArmFrontButtonPressed && this.isArmSlideBackButtonPressed){
-                hardwareReset = true;
-            }
-        }
+        this.ResetForTeleop();
 
         sleep(5000);
     }
@@ -220,6 +185,48 @@ public class FreddyAutoReset extends LinearOpMode {
         /* Send telemetry message to signify robot waiting */
         telemetry.addLine("Robot Is Ready.");
         telemetry.update();
+    }
+
+    private void ResetForTeleop(){
+        //Turn off the encoders for the arm motors
+        slideArmMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        //Create a variable to check if all sensors are reset
+        boolean hardwareReset = false;
+
+        while (hardwareReset == false){
+            this.HandleArmSensors();
+
+            //Check if the arm is fully down
+            if (!this.isArmFrontButtonPressed){
+                //Move the motor down
+                this.slideArmMotor.setPower(0.1);
+            }
+            else{
+                //Stop the motor
+                this.slideArmMotor.setPower(0.0);
+            }
+
+            //Check if the slide is fully back
+            if (!this.isArmSlideBackButtonPressed){
+                //Move the motor backwards
+                this.slideMotor.setPower(-0.2);
+            }
+            else{
+                //Stop the motor
+                this.slideMotor.setPower(0.0);
+            }
+
+            //Add telemetry to just see sensors
+            telemetry.addData("isArmSlideBackButtonPressed", isArmSlideBackButtonPressed);
+            telemetry.addData("isArmFrontButtonPressed", isArmFrontButtonPressed);
+
+            //Check if everything is reset
+            if (this.isArmFrontButtonPressed && this.isArmSlideBackButtonPressed){
+                hardwareReset = true;
+            }
+        }
     }
 
     //</editor-fold>

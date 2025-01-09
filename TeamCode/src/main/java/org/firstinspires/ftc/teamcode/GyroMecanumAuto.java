@@ -32,6 +32,9 @@ public class GyroMecanumAuto extends LinearOpMode {
     private static final double TURN_SPEED = 0.4;
     private static final double STRAFE_SPEED = 0.3;
 
+    //Freddy = FORWARD, Napoleon = BACKWARD
+    public static final RevHubOrientationOnRobot.UsbFacingDirection IMU_ORIENTATION = RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
+
     //<editor-fold desc="Enumerations">
 
     private enum strafeDirection{
@@ -95,12 +98,9 @@ public class GyroMecanumAuto extends LinearOpMode {
         rightRearDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         // Initialize IMU
-        RevHubOrientationOnRobot.LogoFacingDirection logoDirection = RevHubOrientationOnRobot.LogoFacingDirection.UP;
-        RevHubOrientationOnRobot.UsbFacingDirection  usbDirection  = RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
-        RevHubOrientationOnRobot orientationOnRobot = new RevHubOrientationOnRobot(logoDirection, usbDirection);
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD)));
+                IMU_ORIENTATION)));
 
         waitForStart();
 
@@ -108,10 +108,10 @@ public class GyroMecanumAuto extends LinearOpMode {
             // Example autonomous sequence
             gyroDrive(DRIVE_SPEED, 24.0, 0.0);     // Drive forward 24 inches
             //gyroStrafe(STRAFE_SPEED, 12.0, 0.0, strafeDirection.left);   // Strafe left 12 inches
-            //gyroStrafe(STRAFE_SPEED, 12.0, 0.0, strafeDirection.right);   // Strafe right 12 inches
-            //gyroDrive(DRIVE_SPEED, -24.0, 0.0);     // Drive forward 24 inches
-            gyroTurn(TURN_SPEED, 90.0);            // Turn left 90 degrees from original direction
-            gyroTurn(TURN_SPEED, -90.0);            // Turn right 90 degrees from original direction
+            gyroStrafe(STRAFE_SPEED, 12.0, 0.0, strafeDirection.right);   // Strafe right 12 inches
+            //gyroDrive(DRIVE_SPEED, -24.0, 0.0);     // Drive backwards 24 inches
+            //gyroTurn(TURN_SPEED, 90.0);            // Turn left 90 degrees from original direction
+            //gyroTurn(TURN_SPEED, -90.0);            // Turn right 90 degrees from original direction
             //gyroDrive(DRIVE_SPEED, 24.0, 90.0);    // Drive forward 24 inches maintaining 90 degrees
         }
     }

@@ -235,9 +235,9 @@ public class FreddyTeleop extends LinearOpMode {
 
         //Right lift arm
         if (gamepad1.y) {
-            this.armMotorRight.setPower(rightArmPower);
-        } else if (gamepad1.a) {
             this.armMotorRight.setPower(-rightArmPower);
+        } else if (gamepad1.a) {
+            this.armMotorRight.setPower(rightArmPower);
         } else if (!gamepad1.y && !gamepad1.a){
             this.armMotorRight.setPower(0.0);
         }
