@@ -33,6 +33,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 //Imports from auto example code
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -49,7 +50,7 @@ import com.qualcomm.robotcore.hardware.TouchSensor;
 
 
 @Autonomous(name="Freddy Auto - Low Basket", group="Robot")
-//@Disabled
+@Disabled
 public class FreddyAutoLowBasket extends LinearOpMode {
 
     /* Declare hardware variables */

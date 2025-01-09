@@ -1,250 +1,150 @@
-/* Copyright (c) 2017 FIRST. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this list
- * of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright notice, this
- * list of conditions and the following disclaimer in the documentation and/or
- * other materials provided with the distribution.
- *
- * Neither the name of FIRST nor the names of its contributors may be used to endorse or
- * promote products derived from this software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
- * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-//package org.firstinspires.ftc.robotcontroller.external.samples;
 package org.firstinspires.ftc.teamcode;
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+
 
 //Imports from auto example code
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.util.ElapsedTime;
-
-//Imports from FreddyTeleop
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
 
-
-
-
-@Autonomous(name="Freddy Auto - Move Right", group="Robot")
-@Disabled
+@Autonomous(name="Freddy Auto - None", group="Robot")
+//@Disabled
 public class FreddyAutoNone extends LinearOpMode {
 
-    /* Declare hardware variables */
+
+    //<editor-fold desc="Hardware Variables">
     public DcMotor leftFrontDriveMotor = null; //the left drivetrain motor
     public DcMotor rightFrontDriveMotor = null; //the right drivetrain motor
     public DcMotor leftRearDriveMotor = null; //the left drivetrain motor
     public DcMotor rightRearDriveMotor = null; //the right drivetrain motor
 
-    public DcMotor armMotorLeft = null; //the arm motor
+    public DcMotor armMotorLeft = null;
 
     public DcMotor armMotorRight = null;
 
-    public DcMotor  slideMotor = null;
+    public DcMotor slideMotor = null;
 
-    private CRServo gripperWrist = null;
+    public DcMotor slideArmMotor = null;
+
+    private Servo gripperWrist = null;
+
     private Servo gripperHand = null;
 
-    private TouchSensor armButton = null;      // The Viper Slide button at the top of the clip
+    private TouchSensor armButtonFront = null;                   // The REV Robotics touch sensor button on the arm rest tower (Detecting Down Position)
+
+    private TouchSensor armButtonRear = null;                   // The REV Robotics touch sensor button on the upper electronics shelf (Detecting Up Position)
+
+    private TouchSensor armSlideSwitch = null;                 // The REV Robotics Magnetic Limit Switch For the Slide Arm (Detecting Slide Extension Position)
+
+    private TouchSensor armSlideButtonRear = null;              // The REV RObotics touch sensor button on the Swyft Slide back (Detecting Slide Back position)
+
+    //</editor-fold>
+
+    //<editor-fold desc="Member Variables">
+
+    private boolean isArmFrontButtonPressed = false;                     //Variable to determine if the front arm button is being pressed
+
+    private boolean isArmBackButtonPressed = false;                     //Variable to determine if the back arm button is being pressed
+
+    private boolean isArmSlideSwitchPressed = false;                    //Variable to determine if the slide's magnetic switch sensor is pressed
+
+    private boolean isArmSlideBackButtonPressed = false;                //Variable to determine if the slide arm's back button / touch sensor is pressed
 
 
-    // Member variables
-    private FreddyAutoNone.armPosition currentArmPosition = FreddyAutoNone.armPosition.home;         //The current arm position
-    private FreddyAutoNone.armPosition targetArmPosition = FreddyAutoNone.armPosition.home;          //The target arm position
-    private int basketArmMoveStep = 0;                                      //While moving the arm in, what stage it's in
+    //</editor-fold>
 
-    private FreddyAutoNone.driveMode currentDriveMode = FreddyAutoNone.driveMode.collection;              //The current drive mode
-    private boolean isArmButtonPressed = false;                           //Variable to determine if the slide button is being pressed
+    //<editor-fold desc="Constants">
+    private static final int SLIDE_LOW_BASKET = 1500;                  //The degrees the encoder needs to move the slide motor to get to the low basket
+    private static final int SLIDE_HIGH_BASKET = 2900;                  //The degrees the encoder needs to move the slide motor to get to the high basket
 
+    //Napolean = 450, Freddy = 550
+    private static final int SLIDE_COLLECT_OUT = 750;                   //The degrees the encoder needs to move the slide motor to get to the collect out position
 
-    private static final int SLIDE_LOW_BASKET  = 2500;                  //The degrees the encoder needs to move the slide motor to get to the low basket
-    private static final int SLIDE_HIGH_BASKET = 5000;                  //The degrees the encoder needs to move the slide motor to get to the high basket
+    private static final int SLIDE_HOME_RESET = -100;                   // The position to move the slide motor past the home (0) position to account for any variance with the encoder
 
+    private static final int ARM_COLLECT_UP = -500;                     //The degrees to move the arm up slightly to get over the bar
+    private static final int ARM_COLLECT_DELIVERY = -3700;             //The degrees to move the arm straight up to the delivery up position
 
+    private static final int ARM_HOME_RESET = 400;                     // The position to move the arm motor past the home (0) position to account for any variance with the encoder
 
-    private TouchSensor slideButton = null;      // The Viper Slide button at the top of the clip
+    private static final double HAND_OPEN_POSITION = 0.0;               // The servo position for the hand to be fully open.
 
+    //Napoleon = 0.57, Freddy = 0.64
+    private static final double HAND_CLOSED_POSITION = 0.64;            // The servo position for the hand to be fully closed.
 
-    // Member variables
-    private ElapsedTime runtime = new ElapsedTime();
+    // Napolean = 0.70, Freddy = 0.67
+    private static final double WRIST_DOWN_POSITION = 0.67;             // The servo position for the wrist to be fully down.
 
+    private static final double WRIST_BACK_POSITION = 0.0;              // The servo position for the wrist to be fully back.
 
+    private static final double WRIST_DELIVERY_POSITION = 0.30;         // The servo position for the wrist when delivering to the baskets
 
-
-    //Enumerations
-    private enum armPosition {
-        home,
-        collectUp,
-        collectDown,
-        lowBasket,
-        highBasket,
-        endgame
-    }
-
-    private enum driveMode {
-        normal,
-        collection,
-        deposit
-    }
+    private static final double WRIST_COLLECT_UP_POSITION = 0.5;        // The servo position for the wrist when moving to collect up position (slightly back to go over the bar)
 
 
+    //</editor-fold>
+
+    //<editor-fold desc="Op Mode & Handlers">
 
     @Override
     public void runOpMode() {
+        //Configure the hardware
         this.ConfigureHardware();
 
-        // Wait for the game to start (driver presses START)
+        /* Wait for the game driver to press play */
         waitForStart();
 
-        this.DriveReverseForTime(2.0);
-        this.DriveStop();
-        this.MoveArmToDownPosition(0.2, 0.2);
+
+        this.HandleArmSensors();
+        this.SetHardwareDefaultPositions();
+        this.ResetForTeleop();
 
         sleep(5000);
     }
 
-
-
-    private void MoveArmToDownPosition(double leftMotorPower, double rightMotorPower){
-        /* This function will move the arm to the down position with a set power / speed */
-
-        runtime.reset();
-
-        while (opModeIsActive() && (runtime.seconds() < 10)) {
-            this.HandleArmSensors();
-
-            telemetry.addData("Touch Sensor Pressed: ", this.isArmButtonPressed);
-            telemetry.update();
-
-            armMotorLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            armMotorRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-            ((DcMotorEx) armMotorLeft).setPower(leftMotorPower);
-            ((DcMotorEx) armMotorRight).setPower(rightMotorPower);
-
-            if (this.isArmButtonPressed) {
-                ((DcMotorEx) armMotorLeft).setPower(0.0);
-                ((DcMotorEx) armMotorRight).setPower(0.0);
-
-                armMotorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-                armMotorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-                armMotorLeft.setTargetPosition(0);
-                armMotorRight.setTargetPosition(0);
-
-                armMotorRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                armMotorLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-                this.currentArmPosition = FreddyAutoNone.armPosition.collectDown;
-
-                break;
-            }
-        }
+    private void HandleArmSensors() {
+        this.isArmFrontButtonPressed = armButtonFront.isPressed();
+        this.isArmBackButtonPressed = armButtonRear.isPressed();
+        this.isArmSlideSwitchPressed = armSlideSwitch.isPressed();
+        this.isArmSlideBackButtonPressed = armSlideButtonRear.isPressed();
     }
 
-    private void DriveReverseForTime(double Seconds){
-        // Setup a variable for each drive wheel to save power level for telemetry
-        double leftPower = 0.0;
-        double rightPower = 0.0;
+    //</editor-fold>
 
-        // Tank Mode uses one stick to control each wheel.
-        float driveSpeed = 0.4F;
-        float driveOffset = 0.12F;
-        leftPower  = driveSpeed;
-        rightPower = -driveSpeed;
+    //<editor-fold desc="Utility Methods">
 
-        leftRearDriveMotor.setPower(leftPower - driveOffset);
-        leftFrontDriveMotor.setPower(leftPower);
-        rightRearDriveMotor.setPower(rightPower);
-        rightFrontDriveMotor.setPower(rightPower - driveOffset);
+    private void SetHardwareDefaultPositions() {
+        /* This method will set any hardware default positions */
 
-        runtime.reset();
-        while (opModeIsActive() && (runtime.seconds() < Seconds)) {
-            telemetry.addData("Path", "1-Forward: %4.1f S Elapsed", runtime.seconds());
-            telemetry.addData("Run Time", runtime.seconds());
-
-            telemetry.update();
-        }
+        //Set the hand gripper to an open position to start
+        this.gripperHand.setPosition(HAND_CLOSED_POSITION);                //0.0 = All the way open, 1.0 is all the way closed.
+        this.gripperWrist.setPosition(WRIST_BACK_POSITION);                //0.0 = All the way down, 1.0 is all the way back.
     }
 
-
-    private void HandleArmSensors(){
-        this.isArmButtonPressed = armButton.isPressed();
-    }
-
-
-
-    public void DriveStrafeRight(double Seconds) {
-        ChassisMotorValues result = new ChassisMotorValues();
-
-        double strafePower = 0.3;
-        result.leftFront = -strafePower;    //Should move backwards
-        result.rightFront = -strafePower;    //Should move forwards
-        result.leftRear = strafePower;     //Should move forwards
-        result.rightRear = strafePower;     //Should move backwards
-
-        runtime.reset();
-
-        while (opModeIsActive() && ((runtime.seconds() < Seconds))) {
-            leftRearDriveMotor.setPower(result.leftRear);
-            leftFrontDriveMotor.setPower(result.leftFront);
-            rightRearDriveMotor.setPower(result.rightRear);
-            rightFrontDriveMotor.setPower(result.rightFront);
-        }
-    }
-
-
-
-    private void DriveStop(){
-        leftRearDriveMotor.setPower(0);
-        leftFrontDriveMotor.setPower(0);
-        rightRearDriveMotor.setPower(0);
-        rightFrontDriveMotor.setPower(0);
-    }
-
-
-
-
-
-
-    private void ConfigureHardware(){
+    private void ConfigureHardware() {
         /* Define and Initialize Motors */
         leftFrontDriveMotor = hardwareMap.get(DcMotor.class, "leftFrontDrive");          //Control Hub Motor Port 0
         rightFrontDriveMotor = hardwareMap.get(DcMotor.class, "rightFrontDrive");        //Control Hub Motor Port 1
         leftRearDriveMotor = hardwareMap.get(DcMotor.class, "leftRearDrive");            //Control Hub Motor Port 2
         rightRearDriveMotor = hardwareMap.get(DcMotor.class, "rightRearDrive");          //Control Hub Motor Port 3
 
-        gripperWrist = hardwareMap.get(CRServo.class, "gripperWrist");                   //Control Hub Servo Port 0
-        gripperHand = hardwareMap.get(Servo.class, "gripperHand");                       //Control Hub Servo Port 1
+        gripperWrist = hardwareMap.get(Servo.class, "gripperWrist");                     //Expansion Hub Servo Port 0
+        gripperHand = hardwareMap.get(Servo.class, "gripperHand");                       //Expansion Hub Servo Port 1
 
-        armMotorLeft = hardwareMap.get(DcMotor.class, "armleft");                        //Expansion Hub Motor Port 1
-        armMotorRight = hardwareMap.get(DcMotor.class, "armright");//the arm motor       //Expansion Hub Motor Port 2
+        armMotorLeft = hardwareMap.get(DcMotor.class, "armleft");                        //Expansion Hub Motor Port 2
+        armMotorRight = hardwareMap.get(DcMotor.class, "armright");                      //Expansion Hub Motor Port 3
         slideMotor = hardwareMap.get(DcMotor.class, "slide");                            //Expansion Hub Motor Port 0
+        slideArmMotor = hardwareMap.get(DcMotor.class, "slideArm");                      //Expansion Hub Motor Port 1
 
-        armButton = hardwareMap.get(TouchSensor.class, "armButton");                     //Expansion Hub Sensor Port 0
-
+        armButtonFront = hardwareMap.get(TouchSensor.class, "armFrontButton");           //Expansion Hub Sensor Port 0-1
+        armButtonRear = hardwareMap.get(TouchSensor.class, "armBackButton");             //Expansion Hub Sensor Port 2-3
+        armSlideSwitch = hardwareMap.get(TouchSensor.class, "armSlideSwitch");           //Expansion Hub Sensor Port 4-5
+        armSlideButtonRear = hardwareMap.get(TouchSensor.class, "armSlideBackButton");   //Control Hub Sensor Port 0-1
 
         /* Most skid-steer/differential drive robots require reversing one motor to drive forward.
         for this robot, we reverse the right motor.*/
@@ -255,6 +155,7 @@ public class FreddyAutoNone extends LinearOpMode {
         armMotorLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         armMotorRight.setDirection(DcMotorSimple.Direction.FORWARD);
         slideMotor.setDirection(DcMotor.Direction.FORWARD);
+        slideArmMotor.setDirection(DcMotor.Direction.FORWARD);
 
         /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
         much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
@@ -266,28 +167,68 @@ public class FreddyAutoNone extends LinearOpMode {
         armMotorLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armMotorRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        slideArmMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
-        ((DcMotorEx) armMotorLeft).setCurrentAlert(5,CurrentUnit.AMPS);
-        ((DcMotorEx) armMotorRight).setCurrentAlert(5,CurrentUnit.AMPS);
-        ((DcMotorEx) slideMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+        ((DcMotorEx) armMotorLeft).setCurrentAlert(5, CurrentUnit.AMPS);
+        ((DcMotorEx) armMotorRight).setCurrentAlert(5, CurrentUnit.AMPS);
+        ((DcMotorEx) slideMotor).setCurrentAlert(5, CurrentUnit.AMPS);
+        ((DcMotorEx) slideArmMotor).setCurrentAlert(5, CurrentUnit.AMPS);
 
 
-        //Set the arm motor's motor encoder to 0
-        armMotorLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        armMotorRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        armMotorLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        armMotorRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //Set the arm motor to not use the encoder
+        slideArmMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-
-        //Set the viper slide motor encode to 0
-        slideMotor.setTargetPosition(0);
-        slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //Set the slide motor to not use the encoder
+        slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         /* Send telemetry message to signify robot waiting */
         telemetry.addLine("Robot Is Ready.");
         telemetry.update();
     }
+
+    private void ResetForTeleop(){
+        //Turn off the encoders for the arm motors
+        slideArmMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        //Create a variable to check if all sensors are reset
+        boolean hardwareReset = false;
+
+        while (hardwareReset == false){
+            this.HandleArmSensors();
+
+            //Check if the arm is fully down
+            if (!this.isArmFrontButtonPressed){
+                //Move the motor down
+                this.slideArmMotor.setPower(0.1);
+            }
+            else{
+                //Stop the motor
+                this.slideArmMotor.setPower(0.0);
+            }
+
+            //Check if the slide is fully back
+            if (!this.isArmSlideBackButtonPressed){
+                //Move the motor backwards
+                this.slideMotor.setPower(-0.2);
+            }
+            else{
+                //Stop the motor
+                this.slideMotor.setPower(0.0);
+            }
+
+            //Add telemetry to just see sensors
+            telemetry.addData("isArmSlideBackButtonPressed", isArmSlideBackButtonPressed);
+            telemetry.addData("isArmFrontButtonPressed", isArmFrontButtonPressed);
+
+            //Check if everything is reset
+            if (this.isArmFrontButtonPressed && this.isArmSlideBackButtonPressed){
+                hardwareReset = true;
+            }
+        }
+    }
+
+    //</editor-fold>
 
 }

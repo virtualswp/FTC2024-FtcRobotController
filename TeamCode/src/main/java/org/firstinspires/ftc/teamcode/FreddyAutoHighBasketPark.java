@@ -14,8 +14,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
-@Autonomous(name="Freddy Auto - Move Right", group="Linear OpMode")
-public class FreddyAutoMoveRight extends LinearOpMode {
+@Autonomous(name="Freddy Auto - High Basket Park", group="Linear OpMode")
+public class FreddyAutoHighBasketPark extends LinearOpMode {
 
     //<editor-fold desc="Hardware Variables">
     public DcMotor leftFrontDriveMotor = null; //the left drivetrain motor
@@ -49,15 +49,15 @@ public class FreddyAutoMoveRight extends LinearOpMode {
 
     //<editor-fold desc="Member Variables">
 
-    private FreddyAutoMoveRight.armPosition currentArmPosition = FreddyAutoMoveRight.armPosition.home;         //The current arm position
+    private FreddyAutoHighBasketPark.armPosition currentArmPosition = FreddyAutoHighBasketPark.armPosition.home;         //The current arm position
 
-    private FreddyAutoMoveRight.armPosition targetArmPosition = FreddyAutoMoveRight.armPosition.home;          //The target arm position
+    private FreddyAutoHighBasketPark.armPosition targetArmPosition = FreddyAutoHighBasketPark.armPosition.home;          //The target arm position
 
-    private FreddyAutoMoveRight.slidePosition currentSlidePosition = FreddyAutoMoveRight.slidePosition.home;            // The current slide position
+    private FreddyAutoHighBasketPark.slidePosition currentSlidePosition = FreddyAutoHighBasketPark.slidePosition.home;            // The current slide position
 
-    private FreddyAutoMoveRight.slidePosition targetSlidePosition = FreddyAutoMoveRight.slidePosition.home;             // The target slide position
+    private FreddyAutoHighBasketPark.slidePosition targetSlidePosition = FreddyAutoHighBasketPark.slidePosition.home;             // The target slide position
 
-    private FreddyAutoMoveRight.driveMode currentDriveMode = FreddyAutoMoveRight.driveMode.normal;              //The current drive mode
+    private FreddyAutoHighBasketPark.driveMode currentDriveMode = FreddyAutoHighBasketPark.driveMode.normal;              //The current drive mode
 
     private boolean isArmFrontButtonPressed = false;                     //Variable to determine if the front arm button is being pressed
 
@@ -180,8 +180,17 @@ public class FreddyAutoMoveRight extends LinearOpMode {
         // Drive forward to move off the wall
         gyroDrive(DRIVE_SPEED, 3.0, 0.0);
 
-        // Strafe to the right and park in the observation zone
-        gyroStrafe(STRAFE_SPEED, 39.0, 0.0, strafeDirection.right);
+        // Strafe to the left and park in the observation zone
+        gyroStrafe(STRAFE_SPEED, 32.0, 0.0, strafeDirection.left);
+
+        // Turn right from original direction to line up the basket
+        gyroTurn(TURN_SPEED, -45.0);
+
+        // Strafe to the left to center with the basket
+        gyroStrafe(STRAFE_SPEED, 3.0, -45.0, strafeDirection.left);
+
+
+
 
         //Auto reset all hardware for teleop
         this.ResetForTeleop();
@@ -414,7 +423,7 @@ public class FreddyAutoMoveRight extends LinearOpMode {
         double[] wheelPowers = new double[4];
 
         //Strafe Left
-        if (strafeDirection == FreddyAutoMoveRight.strafeDirection.left){
+        if (strafeDirection == FreddyAutoHighBasketPark.strafeDirection.left){
             wheelPowers[0] = drive - strafe - turn;  // Left Front
             wheelPowers[1] = drive + strafe + turn;  // Right Front
             wheelPowers[2] = drive + strafe - turn;  // Left Rear
