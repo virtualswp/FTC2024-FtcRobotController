@@ -180,16 +180,32 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
         // Drive forward to move off the wall
         gyroDrive(DRIVE_SPEED, 3.0, 0.0);
 
-        // Strafe to the left and park in the observation zone
-        gyroStrafe(STRAFE_SPEED, 32.0, 0.0, strafeDirection.left);
+        // Strafe to the left and park in the net zone
+        gyroStrafe(STRAFE_SPEED, 26.0, 0.0, strafeDirection.left);
 
         // Turn right from original direction to line up the basket
         gyroTurn(TURN_SPEED, -45.0);
 
         // Strafe to the left to center with the basket
-        gyroStrafe(STRAFE_SPEED, 3.0, -45.0, strafeDirection.left);
+        gyroStrafe(STRAFE_SPEED, 7.0, -45.0, strafeDirection.left);
 
+        //Move the arm to the delivery position
+        this.MoveArmToDeliveryUpPosition();
 
+        //Move the arm up to the basket for delivery
+        this.MoveSlideToHighBasketPosition();
+
+        //Back Up to the basket
+        gyroDrive(DRIVE_SPEED, -2.0, -45.0);
+
+        this.HandOpen();
+
+        sleep(3000);
+
+        this.HandClose();
+
+        //Move Forward To Close Up The Arm
+        gyroDrive(DRIVE_SPEED, 4.0, -45.0);
 
 
         //Auto reset all hardware for teleop
@@ -214,7 +230,196 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
     //</editor-fold>
 
 
+    //<editor-fold desc="Arm Methods ">
+
+    private void MoveArmToDeliveryUpPosition() {
+
+        while (opModeIsActive() && this.currentArmPosition != armPosition.deliveryUp) {
+            // First, check the current position
+            switch (this.currentArmPosition) {
+                case home:
+                    //NOTE Same code to go to Delivery Up from Collect Up and Home, don't add a break statement
+                case collectUp: {
+                    //Move the wrist to the delivery position
+                    this.gripperWrist.setPosition(WRIST_DELIVERY_POSITION);
+
+                    // Move the arm up to the delivery up position using the encoder
+                    this.slideArmMotor.setTargetPosition(ARM_COLLECT_DELIVERY);
+
+                    // Next, determine where the arm is at so we can throttle the speed of the arm movement
+                    int degreesUntilTarget = Math.abs(this.slideArmMotor.getTargetPosition() - this.slideArmMotor.getCurrentPosition());
+
+                    if (degreesUntilTarget <= 500) {
+                        // Run at a slow speed
+                        ((DcMotorEx) this.slideArmMotor).setVelocity(350);
+                    } else if (degreesUntilTarget <= 1000) {
+                        // Run at a medium speed
+                        ((DcMotorEx) this.slideArmMotor).setVelocity(650);
+                    } else {
+                        //Run at full speed
+                        ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
+                    }
+
+                    this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position (Either from the encoder or the button press)
+                    if (this.isMotorAtPosition(slideArmMotor) || this.isArmBackButtonPressed) {
+                        //Set the encoder position to the current position to hold the arm up
+                        this.slideArmMotor.setTargetPosition(this.slideArmMotor.getCurrentPosition());
+                        this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                        //Success
+                        this.currentArmPosition = FreddyAutoHighBasketAscent.armPosition.deliveryUp;
+                    }
+                }
+                break;
+
+                case collectOut: {
+                    //Move the wrist to the delivery position
+                    this.gripperWrist.setPosition(WRIST_DELIVERY_POSITION);
+
+                    //Move the slide in using the encoder until the back slide button is pressed
+                    this.slideMotor.setTargetPosition(SLIDE_HOME_RESET);
+                    ((DcMotorEx) this.slideMotor).setVelocity(300);
+                    this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position
+                    if (this.isMotorAtPosition(slideMotor) || this.isArmSlideBackButtonPressed) {
+                        //Set the encoder position to the current position to reset the slide to 0
+                        this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
+                        this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                        // Move the arm up to the delivery up position using the encoder
+                        this.slideArmMotor.setTargetPosition(ARM_COLLECT_DELIVERY);
+
+                        // Next, determine where the arm is at so we can throttle the speed of the arm movement
+                        int degreesUntilTarget = Math.abs(this.slideArmMotor.getTargetPosition() - this.slideArmMotor.getCurrentPosition());
+
+                        if (degreesUntilTarget <= 500) {
+                            // Run at a slow speed
+                            ((DcMotorEx) this.slideArmMotor).setVelocity(350);
+                        } else if (degreesUntilTarget <= 1000) {
+                            // Run at a medium speed
+                            ((DcMotorEx) this.slideArmMotor).setVelocity(650);
+                        } else {
+                            //Run at full speed
+                            ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
+                        }
+
+                        this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                        //Next, check if the arm is at the final position (Either from the encoder or the button press)
+                        if (this.isMotorAtPosition(slideArmMotor) || this.isArmBackButtonPressed) {
+                            //Set the encoder position to the current position to hold the arm up
+                            this.slideArmMotor.setTargetPosition(this.slideArmMotor.getCurrentPosition());
+                            this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                            //Success
+                            this.currentArmPosition = FreddyAutoHighBasketAscent.armPosition.deliveryUp;
+                        }
+                    }
+                }
+                break;
+
+                case deliveryUp:
+                    //This shouldn't happen, it's already in delivery up position
+                    break;
+            }
+        }
+    }
+
+    //</editor-fold>
+
+    //<editor-fold desc="Basket Methods ">
+
+    private void MoveSlideToHighBasketPosition() {
+
+        while (opModeIsActive() && currentSlidePosition != FreddyAutoHighBasketAscent.slidePosition.highBasket) {
+            slideMotor.setTargetPosition(SLIDE_HIGH_BASKET);
+            slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            // Next, determine where the side is at so we can throttle the speed of the slide movement
+            int degreesUntilTarget = Math.abs(this.slideMotor.getTargetPosition() - this.slideMotor.getCurrentPosition());
+
+            if (degreesUntilTarget <= 500) {
+                // Run at a slow speed
+                ((DcMotorEx) this.slideMotor).setVelocity(350);
+            } else if (degreesUntilTarget <= 1000) {
+                // Run at a medium speed
+                ((DcMotorEx) this.slideMotor).setVelocity(650);
+            } else {
+                //Run at full speed
+                ((DcMotorEx) this.slideMotor).setVelocity(2000);
+            }
+
+            if (this.isMotorAtPosition(slideMotor) ||
+                    (this.isArmSlideSwitchPressed && (slideMotor.getCurrentPosition() >= SLIDE_HIGH_BASKET_MIN))) {
+                //Set the encoder position to the current position to hold the slide up
+                this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
+                this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                this.currentSlidePosition = FreddyAutoHighBasketAscent.slidePosition.highBasket;
+            }
+        }
+    }
+
+    //</editor-fold>
+
+    //<editor-fold desc="Gripper Methods ">
+
+    private void HandOpen(){
+        //Set the hand gripper to an open position to start
+        this.gripperHand.setPosition(HAND_OPEN_POSITION);                //0.0 = All the way open, 1.0 is all the way closed.
+    }
+
+    private void HandClose(){
+        this.gripperHand.setPosition(HAND_CLOSED_POSITION);
+    }
+
+    private void WristBack(){
+        this.gripperWrist.setPosition(WRIST_BACK_POSITION);                //0.0 = All the way down, 1.0 is all the way back.
+    }
+
+    private void WristForward(){
+        this.gripperWrist.setPosition(WRIST_DOWN_POSITION);                //0.0 = All the way down, 1.0 is all the way back.
+    }
+
+    //</editor-fold>
+
+
+
     //<editor-fold desc="Utility Methods">
+
+    private void CheckInitialArmState() {
+        /* This method will check where the arm is starting at (from the prior auto code or teleop) */
+        if (this.isArmFrontButtonPressed) {
+            this.currentArmPosition = FreddyAutoHighBasketAscent.armPosition.home;
+        }
+    }
+
+    private boolean isArmAtTargetPosition() {
+        return (this.currentArmPosition == this.targetArmPosition);
+    }
+
+    private boolean isSlideAtTargetPosition() {
+        return (this.currentSlidePosition == this.targetSlidePosition);
+    }
+
+    public boolean isMotorAtPosition(DcMotor motor) {
+        if (!motor.isBusy()) {
+            telemetry.addData("motor: ", motor.isBusy());
+            return true;
+        }
+
+        int varianceFactor = 10;
+
+        int currentMotorPosition = motor.getCurrentPosition();
+        int targetMotorPosition = motor.getTargetPosition();
+
+        int error = Math.abs(targetMotorPosition - currentMotorPosition);
+
+        return error <= varianceFactor;
+    }
 
     private void SetHardwareDefaultPositions() {
         /* This method will set any hardware default positions */
