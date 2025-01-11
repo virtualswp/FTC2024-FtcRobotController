@@ -29,6 +29,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import java.lang.Math;
 
@@ -120,6 +121,7 @@ public class FreddyTeleop extends LinearOpMode {
 
     private boolean isArmSlideBackButtonPressed = false;                //Variable to determine if the slide arm's back button / touch sensor is pressed
 
+    private final ElapsedTime runtime = new ElapsedTime();
 
     //</editor-fold>
 
@@ -240,6 +242,25 @@ public class FreddyTeleop extends LinearOpMode {
             this.armMotorRight.setPower(rightArmPower);
         } else if (!gamepad1.y && !gamepad1.a){
             this.armMotorRight.setPower(0.0);
+        }
+
+        //End Ascent
+        if (gamepad1.x){
+            //Hold
+            runtime.reset();
+
+            //Run for 10 seconds to hang
+            while (opModeIsActive() && runtime.seconds() < 10) {
+
+                //Check for the kill switch on game pad 1 or 2
+                if ((gamepad1.b) || (gamepad2.x)){
+                    break;
+                }
+
+                //Otherwise hold the power on the motors
+                this.armMotorLeft.setPower(leftArmPower);
+                this.armMotorRight.setPower(rightArmPower);
+            }
         }
     }
 
@@ -431,8 +452,8 @@ public class FreddyTeleop extends LinearOpMode {
         final double SERVO_MAX_POS = WRIST_BACK_POSITION;       //The servo max position (Gripper Opened)
         final double SERVO_MOVE_SPEED = 0.02;                   //The number of ticks to move by
 
-        //Next, check if the right trigger is being pushed, if so, tip the wrist down.
-        if (gamepad2.right_bumper) {
+        //Next, check if the left trigger is being pushed, if so, tip the wrist down.
+        if (gamepad2.left_bumper) {
             //We don't want to exceed the position the wrist can move, so calculate the minimum current position.
             double newPosition = gripperWrist.getPosition() - SERVO_MOVE_SPEED;
 
@@ -442,8 +463,8 @@ public class FreddyTeleop extends LinearOpMode {
             }
         }
 
-        //Next, check if the left bumper is being pushed, if so, tip the wrist backwards.
-        if (gamepad2.left_bumper) {
+        //Next, check if the right bumper is being pushed, if so, tip the wrist backwards.
+        if (gamepad2.right_bumper) {
             //First calculate the target new position
             double newPosition = gripperWrist.getPosition() + SERVO_MOVE_SPEED;
 
@@ -999,7 +1020,7 @@ public class FreddyTeleop extends LinearOpMode {
         /* This method will set any hardware default positions */
 
         //Set the hand gripper to an open position to start
-        this.gripperHand.setPosition(HAND_OPEN_POSITION);                  //0.0 = All the way open, 1.0 is all the way closed.
+        //this.gripperHand.setPosition(HAND_OPEN_POSITION);                  //0.0 = All the way open, 1.0 is all the way closed.
         this.gripperWrist.setPosition(WRIST_BACK_POSITION);                //0.0 = All the way down, 1.0 is all the way back.
     }
 

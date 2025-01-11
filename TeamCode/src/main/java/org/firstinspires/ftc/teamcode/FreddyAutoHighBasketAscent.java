@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
@@ -67,6 +68,7 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
 
     private boolean isArmSlideBackButtonPressed = false;                //Variable to determine if the slide arm's back button / touch sensor is pressed
 
+    private ElapsedTime runtime = new ElapsedTime();
 
     //</editor-fold>
 
@@ -195,21 +197,53 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
         //Move the arm up to the basket for delivery
         this.MoveSlideToHighBasketPosition();
 
-        //Back Up to the basket
-        gyroDrive(DRIVE_SPEED, -2.0, -45.0);
+        //Back Up to the basket slowly
+        gyroDrive((DRIVE_SPEED - 0.2), -3, -45.0);
 
         this.HandOpen();
 
-        sleep(3000);
+        sleep(1000);
 
         this.HandClose();
 
         //Move Forward To Close Up The Arm
-        gyroDrive(DRIVE_SPEED, 4.0, -45.0);
+        gyroDrive((DRIVE_SPEED - 0.2), 5.25, -45.0);
 
+        //Put da SLide D00wn
+        this.MoveSlideToHomePosition();
+
+        //sleep(1000);
+
+        //Move forward a little bit
+        gyroDrive(DRIVE_SPEED, 15.0, -45.0);
+
+        //set it up to drive towards ascent zone
+        gyroTurn(DRIVE_SPEED, 0.0);
+
+        //drive to acsent zone
+        gyroDrive(DRIVE_SPEED, 30.0, 0.0);
+
+        //turn around to get ready to touch it
+        gyroTurn(DRIVE_SPEED, 90);
+
+        //back up and touch it
+        gyroDrive(DRIVE_SPEED, -11, 90);
+
+        //Move the arm down to home position
+        this.MoveArmToHomePosition();
+
+        //Move the arm up for ascent
+        this.RunAscentArmForTime(1.1);
+
+        //final touch
+        gyroDrive((DRIVE_SPEED - 0.2), -5, 90);
 
         //Auto reset all hardware for teleop
         this.ResetForTeleop();
+
+        //Open the gripper for teleop
+        this.HandOpen();
+
 
 
         /* Send telemetry message to signify robot waiting */
@@ -232,9 +266,104 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
 
     //<editor-fold desc="Arm Methods ">
 
+    private void MoveArmToHomePosition() {
+        while (opModeIsActive() && this.currentArmPosition != armPosition.home) {
+            this.HandleArmSensors();
+
+            //First, determine the current position
+            switch (this.currentArmPosition) {
+                case collectUp:
+                    // Move the arm down to the down up position using the encoder
+                    this.slideArmMotor.setTargetPosition(ARM_HOME_RESET);
+                    ((DcMotorEx) this.slideArmMotor).setVelocity(300);
+                    this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position (Either from the encoder or the button press)
+                    if (this.isMotorAtPosition(slideArmMotor) || this.isArmFrontButtonPressed) {
+                        //Set the encoder position to the current position to hold the arm up
+                        this.slideArmMotor.setTargetPosition(this.slideArmMotor.getCurrentPosition());
+                        this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+
+                        //Success
+                        this.currentArmPosition = FreddyAutoHighBasketAscent.armPosition.home;
+                    }
+
+                    break;
+                case collectOut:
+                    // Move the slide in the home position using the encoder until the button is pressed
+                    this.slideMotor.setTargetPosition(SLIDE_HOME_RESET);
+                    ((DcMotorEx) this.slideMotor).setVelocity(300);
+                    this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position
+                    if (this.isMotorAtPosition(slideMotor) || this.isArmSlideBackButtonPressed) {
+                        //If the back button is being pressed, reset the encoder to 0
+                        if (this.isArmSlideBackButtonPressed) {
+                            //Set the encoder position to the current position to hold the arm up
+                            slideMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                            slideMotor.setTargetPosition(0);
+                            slideMotor.setPower(ENCODER_ZERO_POWER);
+                            this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                        } else {
+                            //Set the encoder position to the current position to hold the arm up
+                            this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
+                            this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                        }
+
+                        //Set the encoder position to the current position to hold the arm up
+                        this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
+                        this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                        //Success
+                        this.currentArmPosition = FreddyAutoHighBasketAscent.armPosition.home;
+                    }
+
+                    break;
+                case deliveryUp:
+                    // Move the arm down to the down up position using the encoder
+                    this.slideArmMotor.setTargetPosition(ARM_HOME_RESET);
+
+                    // Next, determine where the arm is at so we can throttle the speed of the arm movement
+                    int degreesUntilTarget = Math.abs(this.slideArmMotor.getTargetPosition() - this.slideArmMotor.getCurrentPosition());
+
+                    if (degreesUntilTarget <= 500) {
+                        // Run at a slow speed
+                        ((DcMotorEx) this.slideArmMotor).setVelocity(300);
+                    } else if (degreesUntilTarget <= 1000) {
+                        // Run at a medium speed
+                        ((DcMotorEx) this.slideArmMotor).setVelocity(500);
+                    } else {
+                        //Run at full speed
+                        ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
+                    }
+
+                    this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position (Either from the encoder or the button press)
+                    if (this.isMotorAtPosition(slideArmMotor) || this.isArmFrontButtonPressed) {
+                        //Set the encoder position to the current position to hold the arm up
+                        this.slideArmMotor.setTargetPosition(this.slideArmMotor.getCurrentPosition());
+                        this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                        //Success
+                        this.currentArmPosition = FreddyAutoHighBasketAscent.armPosition.home;
+                    }
+
+                    break;
+
+                case home:
+                    //Already here, shouldn't happen
+                    break;
+            }
+        }
+    }
+
     private void MoveArmToDeliveryUpPosition() {
 
         while (opModeIsActive() && this.currentArmPosition != armPosition.deliveryUp) {
+            this.HandleArmSensors();
+
             // First, check the current position
             switch (this.currentArmPosition) {
                 case home:
@@ -335,6 +464,8 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
     private void MoveSlideToHighBasketPosition() {
 
         while (opModeIsActive() && currentSlidePosition != FreddyAutoHighBasketAscent.slidePosition.highBasket) {
+            this.HandleArmSensors();
+
             slideMotor.setTargetPosition(SLIDE_HIGH_BASKET);
             slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
@@ -363,7 +494,39 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
         }
     }
 
+    private void MoveSlideToHomePosition() {
+        while (opModeIsActive() && currentSlidePosition != FreddyAutoHighBasketAscent.slidePosition.home) {
+            this.HandleArmSensors();
+
+            //Move the wrist to the delivery position
+            this.gripperWrist.setPosition(WRIST_DOWN_POSITION);
+
+            slideMotor.setTargetPosition(0);
+            ((DcMotorEx) slideMotor).setVelocity(1500);
+            slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            if (this.isMotorAtPosition(slideMotor)) {
+                this.currentSlidePosition = FreddyAutoHighBasketAscent.slidePosition.home;
+            }
+        }
+    }
+
     //</editor-fold>
+
+
+
+
+    private void RunAscentArmForTime(double seconds) {
+        runtime.reset();
+        final double rightArmPower = 0.7;
+
+        while (opModeIsActive() && runtime.seconds() < seconds) {
+            this.armMotorRight.setPower(-rightArmPower);
+        }
+
+        this.armMotorRight.setPower(0.0);
+
+    }
 
     //<editor-fold desc="Gripper Methods ">
 
@@ -552,6 +715,7 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
         telemetry.addLine("Robot Is Ready.");
         telemetry.update();
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Gyro Steering Example Code">
