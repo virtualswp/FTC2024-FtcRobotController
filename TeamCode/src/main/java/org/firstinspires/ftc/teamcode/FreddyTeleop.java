@@ -128,17 +128,21 @@ public class FreddyTeleop extends LinearOpMode {
     //<editor-fold desc="Constants">
 
     private static final double ENCODER_ZERO_POWER = 0.1;               //The amount of power to have the motor use to brake (hold) the motor position.
-    private static final int SLIDE_LOW_BASKET = 1500;                   //The degrees the encoder needs to move the slide motor to get to the low basket
-    private static final int SLIDE_HIGH_BASKET = 3700;                  //The degrees the encoder needs to move the slide motor to get to the high basket
 
-    private static final int SLIDE_HIGH_BASKET_MIN = 3550;              //The minimum height the magnetic switch sensor can be valid at
+    private static final int SLIDE_LOW_BASKET = 1500;                   //The degrees the encoder needs to move the slide motor to get to the low basket
+
+    //freddy = 3700, Napoliean = 3500
+    private static final int SLIDE_HIGH_BASKET = 3500;                  //The degrees the encoder needs to move the slide motor to get to the high basket
+
+    //freddy = 3550, napoleon = 3400
+    private static final int SLIDE_HIGH_BASKET_MIN = 3400;              //The minimum height the magnetic switch sensor can be valid at
 
     //Napoleon = 450, Freddy = 550
-    private static final int SLIDE_COLLECT_OUT = 550;                   //The degrees the encoder needs to move the slide motor to get to the collect out position
+    private static final int SLIDE_COLLECT_OUT = 400;                   //The degrees the encoder needs to move the slide motor to get to the collect out position
 
     private static final int SLIDE_COLLECT_OUT_SPEED = 700;             //The velocity to move the slide out to collect out.
 
-    private static final int SLIDE_HOME_RESET = -200;                   // The position to move the slide motor past the home (0) position to account for any variance with the encoder
+    private static final int SLIDE_HOME_RESET = -100;                   // The position to move the slide motor past the home (0) position to account for any variance with the encoder
 
     private static final int ARM_COLLECT_DELIVERY = -3700;             //The degrees to move the arm straight up to the delivery up position
 
@@ -147,7 +151,7 @@ public class FreddyTeleop extends LinearOpMode {
     private static final double HAND_OPEN_POSITION = 0.0;               // The servo position for the hand to be fully open.
 
     //Napoleon = 0.57, Freddy = 0.64
-    private static final double HAND_CLOSED_POSITION = 0.64;            // The servo position for the hand to be fully closed.
+    private static final double HAND_CLOSED_POSITION = 0.57;            // The servo position for the hand to be fully closed.
 
     // Napoleon = 0.70, Freddy = 0.67
     private static final double WRIST_DOWN_POSITION = 0.70;             // The servo position for the wrist to be fully down.
@@ -450,7 +454,7 @@ public class FreddyTeleop extends LinearOpMode {
         //First, define the values of the servo positions
         final double SERVO_MIN_POS = WRIST_DOWN_POSITION;       //The servo min position (Gripper Closed)
         final double SERVO_MAX_POS = WRIST_BACK_POSITION;       //The servo max position (Gripper Opened)
-        final double SERVO_MOVE_SPEED = 0.02;                   //The number of ticks to move by
+        final double SERVO_MOVE_SPEED = 0.01;                   //The number of ticks to move by
 
         //Next, check if the left trigger is being pushed, if so, tip the wrist down.
         if (gamepad2.left_bumper) {
@@ -478,7 +482,7 @@ public class FreddyTeleop extends LinearOpMode {
 
     private void HandleTeleopHand() {
         //First, define the values of the servo positions
-        final double SERVO_MOVE_SPEED = 0.02;               //The number of ticks to move by
+        final double SERVO_MOVE_SPEED = 0.03;               //The number of ticks to move by
 
         //Next, check if the left trigger is being pushed, if so, open the gripper.
         if (gamepad2.left_trigger > 0) {
@@ -938,7 +942,8 @@ public class FreddyTeleop extends LinearOpMode {
         }
 
         if (this.isMotorAtPosition(slideMotor) ||
-                (this.isArmSlideSwitchPressed && (slideMotor.getCurrentPosition() >= SLIDE_HIGH_BASKET_MIN))) {
+                (this.isArmSlideSwitchPressed && (slideMotor.getCurrentPosition() >= SLIDE_HIGH_BASKET_MIN)))
+        {
                 //Set the encoder position to the current position to hold the slide up
                 this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
                 this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
