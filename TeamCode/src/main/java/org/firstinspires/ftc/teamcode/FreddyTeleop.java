@@ -30,6 +30,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Device;
 
 import java.lang.Math;
 
@@ -131,16 +132,18 @@ public class FreddyTeleop extends LinearOpMode {
 
     private static final int SLIDE_LOW_BASKET = 1500;                   //The degrees the encoder needs to move the slide motor to get to the low basket
 
-    //freddy = 3700, Napoliean = 3500
-    private static final int SLIDE_HIGH_BASKET = 3500;                  //The degrees the encoder needs to move the slide motor to get to the high basket
+    //freddy = 3500, Napoliean = 3500
+    private int SLIDE_HIGH_BASKET = 3500;                  //The degrees the encoder needs to move the slide motor to get to the high basket
 
     //freddy = 3550, napoleon = 3400
-    private static final int SLIDE_HIGH_BASKET_MIN = 3400;              //The minimum height the magnetic switch sensor can be valid at
+    private int SLIDE_HIGH_BASKET_MIN = 3400;              //The minimum height the magnetic switch sensor can be valid at
 
-    //Napoleon = 450, Freddy = 550
-    private static final int SLIDE_COLLECT_OUT = 400;                   //The degrees the encoder needs to move the slide motor to get to the collect out position
+    //Napoleon = 450, Freddy = 750
+    private int SLIDE_COLLECT_OUT = 450;                   //The degrees the encoder needs to move the slide motor to get to the collect out position
 
-    private static final int SLIDE_COLLECT_OUT_SPEED = 700;             //The velocity to move the slide out to collect out.
+    private static final int SLIDE_COLLECT_OUT_SPEED = 1200;             //The velocity to move the slide out to collect out.
+
+    private static final int SLIDE_COLLECT_UP_SPEED = 900;              //The velocity to move the slide in to the collect up position.
 
     private static final int SLIDE_HOME_RESET = -100;                   // The position to move the slide motor past the home (0) position to account for any variance with the encoder
 
@@ -151,10 +154,10 @@ public class FreddyTeleop extends LinearOpMode {
     private static final double HAND_OPEN_POSITION = 0.0;               // The servo position for the hand to be fully open.
 
     //Napoleon = 0.57, Freddy = 0.64
-    private static final double HAND_CLOSED_POSITION = 0.57;            // The servo position for the hand to be fully closed.
+    private double HAND_CLOSED_POSITION = 0.57;            // The servo position for the hand to be fully closed.
 
     // Napoleon = 0.70, Freddy = 0.67
-    private static final double WRIST_DOWN_POSITION = 0.70;             // The servo position for the wrist to be fully down.
+    private double WRIST_DOWN_POSITION = 0.70;             // The servo position for the wrist to be fully down.
 
     private static final double WRIST_BACK_POSITION = 0.0;              // The servo position for the wrist to be fully back.
 
@@ -162,7 +165,7 @@ public class FreddyTeleop extends LinearOpMode {
 
     private static final double WRIST_COLLECT_UP_POSITION = 0.5;        // The servo position for the wrist when moving to collect up position (slightly back to go over the bar)
 
-
+    private static final robot currentRobot = robot.Freddy;                   // The robot
 
     //</editor-fold>
 
@@ -194,14 +197,22 @@ public class FreddyTeleop extends LinearOpMode {
         normal,
         slow
     }
+
+    private enum robot {
+        Freddy,
+
+        Napoleon,
+    }
+
     //</editor-fold>
 
     //<editor-fold desc="Op Mode & Handlers">
 
     @Override
     public void runOpMode() {
-        //Configure the hardware
+        //Configure the hardware and hardware values
         this.ConfigureHardware();
+        this.ConfigureHardwareValues();
 
         /* Wait for the game driver to press play */
         waitForStart();
@@ -210,8 +221,6 @@ public class FreddyTeleop extends LinearOpMode {
         this.HandleArmSensors();
         this.CheckInitialArmState();
         this.SetHardwareDefaultPositions();
-
-
 
         /* Run until the driver presses stop */
         while (opModeIsActive()) {
@@ -561,7 +570,7 @@ public class FreddyTeleop extends LinearOpMode {
             case collectUp:
                 // Move the arm down to the down up position using the encoder
                 this.slideArmMotor.setTargetPosition(ARM_HOME_RESET);
-                ((DcMotorEx) this.slideArmMotor).setVelocity(300);
+                ((DcMotorEx) this.slideArmMotor).setVelocity(SLIDE_COLLECT_UP_SPEED);
                 this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 //Next, check if the arm is at the final position (Either from the encoder or the button press)
@@ -579,7 +588,7 @@ public class FreddyTeleop extends LinearOpMode {
             case collectOut:
                 // Move the slide in the home position using the encoder until the button is pressed
                 this.slideMotor.setTargetPosition(SLIDE_HOME_RESET);
-                ((DcMotorEx) this.slideMotor).setVelocity(300);
+                ((DcMotorEx) this.slideMotor).setVelocity(SLIDE_COLLECT_UP_SPEED);
                 this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 //Next, check if the arm is at the final position
@@ -697,16 +706,25 @@ public class FreddyTeleop extends LinearOpMode {
                 // Next, determine where the arm is at so we can throttle the speed of the arm movement
                 int degreesUntilTarget = Math.abs(this.slideArmMotor.getTargetPosition() - this.slideArmMotor.getCurrentPosition());
 
-                if (degreesUntilTarget <= 1000) {
-                    // Run at a slow speed
-                    ((DcMotorEx) this.slideArmMotor).setVelocity(300);
-                } else if (degreesUntilTarget <= 1500) {
+//                if (degreesUntilTarget <= 1000) {
+//                    // Run at a slow speed
+//                    ((DcMotorEx) this.slideArmMotor).setVelocity(300);
+//                } else if (degreesUntilTarget <= 1500) {
+//                    // Run at a medium speed
+//                    ((DcMotorEx) this.slideArmMotor).setVelocity(500);
+//                } else {
+//                    //Run at full speed
+//                    ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
+//                }
+
+                if (degreesUntilTarget <= 1500) {
                     // Run at a medium speed
                     ((DcMotorEx) this.slideArmMotor).setVelocity(500);
                 } else {
                     //Run at full speed
                     ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
                 }
+
                 this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 //Next, check if the arm is at the final position
@@ -743,7 +761,7 @@ public class FreddyTeleop extends LinearOpMode {
 
                 // Move the slide in the home position using the encoder until the button is pressed
                 this.slideMotor.setTargetPosition(-20);
-                ((DcMotorEx) this.slideMotor).setVelocity(400);
+                ((DcMotorEx) this.slideMotor).setVelocity(SLIDE_COLLECT_UP_SPEED);
                 this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                 //Next, check if the arm is at the final position
@@ -831,9 +849,9 @@ public class FreddyTeleop extends LinearOpMode {
                 if (degreesUntilTarget <= 500) {
                     // Run at a slow speed
                     ((DcMotorEx) this.slideArmMotor).setVelocity(350);
-                } else if (degreesUntilTarget <= 1000) {
-                    // Run at a medium speed
-                    ((DcMotorEx) this.slideArmMotor).setVelocity(650);
+//                } else if (degreesUntilTarget <= 1000) {
+//                    // Run at a medium speed
+//                    ((DcMotorEx) this.slideArmMotor).setVelocity(650);
                 } else {
                     //Run at full speed
                     ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
@@ -933,16 +951,16 @@ public class FreddyTeleop extends LinearOpMode {
         if (degreesUntilTarget <= 500) {
             // Run at a slow speed
             ((DcMotorEx) this.slideMotor).setVelocity(350);
-        } else if (degreesUntilTarget <= 1000) {
-            // Run at a medium speed
-            ((DcMotorEx) this.slideMotor).setVelocity(650);
+//        } else if (degreesUntilTarget <= 1000) {
+//            // Run at a medium speed
+//            ((DcMotorEx) this.slideMotor).setVelocity(650);
         } else {
             //Run at full speed
             ((DcMotorEx) this.slideMotor).setVelocity(2000);
         }
 
         if (this.isMotorAtPosition(slideMotor) ||
-                (this.isArmSlideSwitchPressed && (slideMotor.getCurrentPosition() >= SLIDE_HIGH_BASKET_MIN)))
+                (this.isArmSlideSwitchPressed && (Math.abs(slideMotor.getCurrentPosition()) >= SLIDE_HIGH_BASKET_MIN)))
         {
                 //Set the encoder position to the current position to hold the slide up
                 this.slideMotor.setTargetPosition(this.slideMotor.getCurrentPosition());
@@ -1051,6 +1069,23 @@ public class FreddyTeleop extends LinearOpMode {
         int error = Math.abs(targetMotorPosition - currentMotorPosition);
 
         return error <= varianceFactor;
+    }
+
+    private void ConfigureHardwareValues(){
+        if (currentRobot == robot.Freddy) {
+            SLIDE_HIGH_BASKET = 3450;
+            SLIDE_HIGH_BASKET_MIN = 3300;
+            SLIDE_COLLECT_OUT = 750;
+            HAND_CLOSED_POSITION = 0.64;
+            WRIST_DOWN_POSITION = 0.67;
+        }
+        else if (currentRobot == robot.Napoleon){
+            SLIDE_HIGH_BASKET = 3450;
+            SLIDE_HIGH_BASKET_MIN = 3300;
+            SLIDE_COLLECT_OUT = 450;
+            HAND_CLOSED_POSITION = 0.57;
+            WRIST_DOWN_POSITION = 0.70;
+        }
     }
 
     private void ConfigureHardware() {
