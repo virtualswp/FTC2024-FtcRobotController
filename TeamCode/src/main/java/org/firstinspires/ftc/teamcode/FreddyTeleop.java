@@ -1077,7 +1077,7 @@ public class FreddyTeleop extends LinearOpMode {
             SLIDE_HIGH_BASKET = 3450;
             SLIDE_HIGH_BASKET_MIN = 3300;
             SLIDE_COLLECT_OUT = 550;
-            HAND_CLOSED_POSITION = 0.70;
+            HAND_CLOSED_POSITION = 0.67;
             WRIST_DOWN_POSITION = 0.67;
         }
         else if (currentRobot == robot.Napoleon){
