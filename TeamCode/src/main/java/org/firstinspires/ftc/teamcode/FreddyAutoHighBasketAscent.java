@@ -75,17 +75,23 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
     //<editor-fold desc="Constants">
 
     private static final double ENCODER_ZERO_POWER = 0.1;               //The amount of power to have the motor use to brake (hold) the motor position.
+
     private static final int SLIDE_LOW_BASKET = 1500;                   //The degrees the encoder needs to move the slide motor to get to the low basket
-    private static final int SLIDE_HIGH_BASKET = 3700;                  //The degrees the encoder needs to move the slide motor to get to the high basket
 
-    private static final int SLIDE_HIGH_BASKET_MIN = 3550;              //The minimum height the magnetic switch sensor can be valid at
+    //freddy = 3500, Napoliean = 3500
+    private int SLIDE_HIGH_BASKET = 3500;                  //The degrees the encoder needs to move the slide motor to get to the high basket
 
-    //Napoleon = 450, Freddy = 550
-    private static final int SLIDE_COLLECT_OUT = 550;                   //The degrees the encoder needs to move the slide motor to get to the collect out position
+    //freddy = 3550, napoleon = 3400
+    private int SLIDE_HIGH_BASKET_MIN = 3400;              //The minimum height the magnetic switch sensor can be valid at
 
-    private static final int SLIDE_COLLECT_OUT_SPEED = 700;             //The velocity to move the slide out to collect out.
+    //Napoleon = 450, Freddy = 750
+    private int SLIDE_COLLECT_OUT = 450;                   //The degrees the encoder needs to move the slide motor to get to the collect out position
 
-    private static final int SLIDE_HOME_RESET = -200;                   // The position to move the slide motor past the home (0) position to account for any variance with the encoder
+    private static final int SLIDE_COLLECT_OUT_SPEED = 1200;             //The velocity to move the slide out to collect out.
+
+    private static final int SLIDE_COLLECT_UP_SPEED = 900;              //The velocity to move the slide in to the collect up position.
+
+    private static final int SLIDE_HOME_RESET = -100;                   // The position to move the slide motor past the home (0) position to account for any variance with the encoder
 
     private static final int ARM_COLLECT_DELIVERY = -3700;             //The degrees to move the arm straight up to the delivery up position
 
@@ -94,10 +100,10 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
     private static final double HAND_OPEN_POSITION = 0.0;               // The servo position for the hand to be fully open.
 
     //Napoleon = 0.57, Freddy = 0.64
-    private static final double HAND_CLOSED_POSITION = 0.64;            // The servo position for the hand to be fully closed.
+    private double HAND_CLOSED_POSITION = 0.57;            // The servo position for the hand to be fully closed.
 
     // Napoleon = 0.70, Freddy = 0.67
-    private static final double WRIST_DOWN_POSITION = 0.70;             // The servo position for the wrist to be fully down.
+    private double WRIST_DOWN_POSITION = 0.70;             // The servo position for the wrist to be fully down.
 
     private static final double WRIST_BACK_POSITION = 0.0;              // The servo position for the wrist to be fully back.
 
@@ -105,7 +111,7 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
 
     private static final double WRIST_COLLECT_UP_POSITION = 0.5;        // The servo position for the wrist when moving to collect up position (slightly back to go over the bar)
 
-
+    private static final FreddyAutoHighBasketAscent.robot currentRobot = FreddyAutoHighBasketAscent.robot.Freddy;                   // The robot
 
     //</editor-fold>
 
@@ -165,6 +171,14 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
         collection,
         deposit
     }
+
+    private enum robot {
+        Freddy,
+
+        Napoleon,
+    }
+
+
     //</editor-fold>
 
     //<editor-fold desc="Op Mode & Handlers">
@@ -173,6 +187,7 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
     public void runOpMode() {
         // Initialize hardware
         this.ConfigureHardware();
+        this.ConfigureHardwareValues();
 
         waitForStart();
 
@@ -330,10 +345,12 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
                     if (degreesUntilTarget <= 500) {
                         // Run at a slow speed
                         ((DcMotorEx) this.slideArmMotor).setVelocity(300);
-                    } else if (degreesUntilTarget <= 1000) {
-                        // Run at a medium speed
-                        ((DcMotorEx) this.slideArmMotor).setVelocity(500);
-                    } else {
+                    }
+//                    else if (degreesUntilTarget <= 1000) {
+//                        // Run at a medium speed
+//                        ((DcMotorEx) this.slideArmMotor).setVelocity(500);
+//                    }
+                    else {
                         //Run at full speed
                         ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
                     }
@@ -381,10 +398,12 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
                     if (degreesUntilTarget <= 500) {
                         // Run at a slow speed
                         ((DcMotorEx) this.slideArmMotor).setVelocity(350);
-                    } else if (degreesUntilTarget <= 1000) {
-                        // Run at a medium speed
-                        ((DcMotorEx) this.slideArmMotor).setVelocity(650);
-                    } else {
+                    }
+//                    else if (degreesUntilTarget <= 1000) {
+//                        // Run at a medium speed
+//                        ((DcMotorEx) this.slideArmMotor).setVelocity(650);
+//                    }
+                    else {
                         //Run at full speed
                         ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
                     }
@@ -427,9 +446,9 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
                         if (degreesUntilTarget <= 500) {
                             // Run at a slow speed
                             ((DcMotorEx) this.slideArmMotor).setVelocity(350);
-                        } else if (degreesUntilTarget <= 1000) {
-                            // Run at a medium speed
-                            ((DcMotorEx) this.slideArmMotor).setVelocity(650);
+//                        } else if (degreesUntilTarget <= 1000) {
+//                            // Run at a medium speed
+//                            ((DcMotorEx) this.slideArmMotor).setVelocity(650);
                         } else {
                             //Run at full speed
                             ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
@@ -475,9 +494,9 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
             if (degreesUntilTarget <= 500) {
                 // Run at a slow speed
                 ((DcMotorEx) this.slideMotor).setVelocity(350);
-            } else if (degreesUntilTarget <= 1000) {
-                // Run at a medium speed
-                ((DcMotorEx) this.slideMotor).setVelocity(650);
+//            } else if (degreesUntilTarget <= 1000) {
+//                // Run at a medium speed
+//                ((DcMotorEx) this.slideMotor).setVelocity(650);
             } else {
                 //Run at full speed
                 ((DcMotorEx) this.slideMotor).setVelocity(2000);
@@ -632,6 +651,23 @@ public class FreddyAutoHighBasketAscent extends LinearOpMode {
             if (this.isArmFrontButtonPressed && this.isArmSlideBackButtonPressed){
                 hardwareReset = true;
             }
+        }
+    }
+
+    private void ConfigureHardwareValues(){
+        if (currentRobot == FreddyAutoHighBasketAscent.robot.Freddy) {
+            SLIDE_HIGH_BASKET = 3450;
+            SLIDE_HIGH_BASKET_MIN = 3300;
+            SLIDE_COLLECT_OUT = 550;
+            HAND_CLOSED_POSITION = 0.64;
+            WRIST_DOWN_POSITION = 0.67;
+        }
+        else if (currentRobot == FreddyAutoHighBasketAscent.robot.Napoleon){
+            SLIDE_HIGH_BASKET = 3450;
+            SLIDE_HIGH_BASKET_MIN = 3300;
+            SLIDE_COLLECT_OUT = 450;
+            HAND_CLOSED_POSITION = 0.57;
+            WRIST_DOWN_POSITION = 0.70;
         }
     }
 
