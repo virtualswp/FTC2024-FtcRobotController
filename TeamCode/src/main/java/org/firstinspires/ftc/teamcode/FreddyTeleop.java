@@ -386,21 +386,22 @@ public class FreddyTeleop extends LinearOpMode {
             c = this.strafeLeft(strafeLeft);
 
             if (this.currentDriveMode == driveMode.normal) {
-                // Collect drive mode (slow down)
-                float collectorModeFactor = 0.7F;
+                // Normal Drive Mode
+                float collectorModeFactor = 0.4F;
                 leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
                 leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
                 rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
                 rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
             } else if (this.currentDriveMode == driveMode.slow) {
-                // Deposit drive mode (really slow down)
-                float collectorModeFactor = 0.3F;
+                // Slow Drive Mode
+                float collectorModeFactor = 0.2F;
                 leftRearDriveMotor.setPower(c.leftRear * collectorModeFactor);
                 leftFrontDriveMotor.setPower(c.leftFront * collectorModeFactor);
                 rightRearDriveMotor.setPower(c.rightRear * collectorModeFactor);
                 rightFrontDriveMotor.setPower(c.rightFront * collectorModeFactor);
             } else {
-                // Normal Drive mode (full speed)
+                // Fast Drive mode
+                float collectorModeFactor = 0.7F;
                 leftRearDriveMotor.setPower(c.leftRear);
                 leftFrontDriveMotor.setPower(c.leftFront);
                 rightRearDriveMotor.setPower(c.rightRear);
@@ -1076,7 +1077,7 @@ public class FreddyTeleop extends LinearOpMode {
             SLIDE_HIGH_BASKET = 3450;
             SLIDE_HIGH_BASKET_MIN = 3300;
             SLIDE_COLLECT_OUT = 550;
-            HAND_CLOSED_POSITION = 0.64;
+            HAND_CLOSED_POSITION = 0.70;
             WRIST_DOWN_POSITION = 0.67;
         }
         else if (currentRobot == robot.Napoleon){
@@ -1122,10 +1123,10 @@ public class FreddyTeleop extends LinearOpMode {
         /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
         much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
         stops much quicker. */
-        leftFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        rightFrontDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        leftRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        rightRearDriveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         armMotorLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armMotorRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         slideMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
