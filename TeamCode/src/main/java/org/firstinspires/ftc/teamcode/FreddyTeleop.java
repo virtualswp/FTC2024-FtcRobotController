@@ -222,6 +222,9 @@ public class FreddyTeleop extends LinearOpMode {
         this.CheckInitialArmState();
         this.SetHardwareDefaultPositions();
 
+        //Reset for teleop
+        this.ResetForTeleop();
+
         /* Run until the driver presses stop */
         while (opModeIsActive()) {
             this.HandleTeleopDrive();
@@ -1031,6 +1034,49 @@ public class FreddyTeleop extends LinearOpMode {
     //</editor-fold>
 
     //<editor-fold desc="Utility Methods">
+
+    private void ResetForTeleop(){
+        //Turn off the encoders for the arm motors
+        slideArmMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        slideMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        //Create a variable to check if all sensors are reset
+        boolean hardwareReset = false;
+
+        while (hardwareReset == false){
+            this.HandleArmSensors();
+
+            //Check if the arm is fully down
+            if (!this.isArmFrontButtonPressed){
+                //Move the motor down
+                this.slideArmMotor.setPower(0.3);
+            }
+            else{
+                //Stop the motor
+                this.slideArmMotor.setPower(0.0);
+            }
+
+            //Check if the slide is fully back
+            if (!this.isArmSlideBackButtonPressed){
+                //Move the motor backwards
+                this.slideMotor.setPower(-0.3);
+            }
+            else{
+                //Stop the motor
+                this.slideMotor.setPower(0.0);
+            }
+
+            //Add telemetry to just see sensors
+            telemetry.addData("isArmSlideBackButtonPressed", isArmSlideBackButtonPressed);
+            telemetry.addData("isArmFrontButtonPressed", isArmFrontButtonPressed);
+            telemetry.update();
+
+            //Check if everything is reset
+            if (this.isArmFrontButtonPressed && this.isArmSlideBackButtonPressed){
+                hardwareReset = true;
+            }
+        }
+    }
 
     private void CheckInitialArmState() {
         /* This method will check where the arm is starting at (from the prior auto code or teleop) */

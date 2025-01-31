@@ -215,7 +215,7 @@ public class FreddyAutoHighBasket2Samples extends LinearOpMode {
 
         this.HandOpen();
 
-        sleep(1000);
+        sleep(500);
 
         this.HandClose();
 
@@ -225,25 +225,65 @@ public class FreddyAutoHighBasket2Samples extends LinearOpMode {
         //Put da SLide D00wn
         this.MoveSlideToHomePosition();
 
-        sleep(1000);
+        //sleep(1000);
 
-        //Move forward a little bit
-        gyroDrive(DRIVE_SPEED, 15.0, -45.0);
+        //Move the arm out to collect out position
+        this.MoveArmToCollectOutPosition();
 
+        //Move to the right most sample on the playfield
         gyroTurn(DRIVE_SPEED, 0.0);
+        gyroDrive(DRIVE_SPEED, 7, 0.0);
 
-        gyroDrive(DRIVE_SPEED, 30.0,0.0);
+        // Pickup the right most sample
+        this.HandClose();
+        sleep(500);
 
-        gyroStrafe(DRIVE_SPEED, 15.0, 0.0, strafeDirection.left);
+        //Move the arm to the delivery position
+        this.MoveArmToDeliveryUpPosition();
 
-        //Move the arm down to home position
-        this.MoveArmToHomePosition();
+        //Backup back to the basket
+        gyroDrive(DRIVE_SPEED, -6, 0.0);
+        gyroTurn(DRIVE_SPEED, -45.0);
+
+        //Move the arm up to the basket for delivery
+        this.MoveSlideToHighBasketPosition();
+
+        //Back Up to the basket slowly
+        gyroDrive((DRIVE_SPEED - 0.2), -2.0, -45.0);
+
+
+        this.HandOpen();
+
+        sleep(500);
+
+        //Move Forward To Close Up The Arm
+        gyroDrive((DRIVE_SPEED - 0.2), 4.0, -45.0);
+
+        //Put da SLide D00wn
+        this.MoveSlideToHomePosition();
 
         //Auto reset all hardware for teleop
         this.ResetForTeleop();
 
+        //gyroDrive(DRIVE_SPEED, 30, 0.0);
+
+        //Move out of the way
+        //gyroDrive(DRIVE_SPEED, 15.0, -45.0);
+
+        //gyroTurn(DRIVE_SPEED, 0.0);
+
+        //gyroDrive(DRIVE_SPEED, 30.0,0.0);
+
+        //gyroStrafe(DRIVE_SPEED, 15.0, 0.0, strafeDirection.left);
+
+        //Move the arm down to home position
+        //this.MoveArmToHomePosition();
+
+        //Auto reset all hardware for teleop
+        //this.ResetForTeleop();
+
         //Open the gripper for teleop
-        this.HandOpen();
+        //this.HandOpen();
 
 
         /* Send telemetry message to signify robot waiting */
@@ -409,7 +449,7 @@ public class FreddyAutoHighBasket2Samples extends LinearOpMode {
 
                     //Move the slide in using the encoder until the back slide button is pressed
                     this.slideMotor.setTargetPosition(SLIDE_HOME_RESET);
-                    ((DcMotorEx) this.slideMotor).setVelocity(300);
+                    ((DcMotorEx) this.slideMotor).setVelocity(600);
                     this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
                     //Next, check if the arm is at the final position
@@ -457,6 +497,112 @@ public class FreddyAutoHighBasket2Samples extends LinearOpMode {
         }
     }
 
+    private void MoveArmToCollectOutPosition() {
+        while (opModeIsActive() && this.currentArmPosition != armPosition.collectOut) {
+            this.HandleArmSensors();
+
+            // First, check the current position
+            switch (this.currentArmPosition) {
+                case home:
+                    //First move the wrist down and open the gripper
+                    this.gripperWrist.setPosition(WRIST_DOWN_POSITION);
+                    this.gripperHand.setPosition(HAND_OPEN_POSITION);
+
+                    // Move the slide out the collect up position using the encoder
+                    this.slideMotor.setTargetPosition(SLIDE_COLLECT_OUT);
+                    ((DcMotorEx) this.slideMotor).setVelocity(SLIDE_COLLECT_OUT_SPEED);
+                    this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position
+                    if (this.isMotorAtPosition(slideMotor)) {
+                        //Success
+                        this.currentArmPosition = FreddyAutoHighBasket2Samples.armPosition.collectOut;
+                    }
+
+                    break;
+                case collectOut:
+                    //This shouldn't happen, it's already in collect up position
+                    break;
+                case collectUp:
+                    //First move the wrist down and open the gripper
+                    this.gripperWrist.setPosition(WRIST_DOWN_POSITION);
+                    this.gripperHand.setPosition(HAND_OPEN_POSITION);
+
+                    // Move the slide out the collect out position using the encoder
+                    this.slideMotor.setTargetPosition(SLIDE_COLLECT_OUT);
+                    ((DcMotorEx) this.slideMotor).setVelocity(SLIDE_COLLECT_OUT_SPEED);
+                    this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position
+                    if (this.isMotorAtPosition(slideMotor)) {
+                        //Success
+                        this.currentArmPosition = FreddyAutoHighBasket2Samples.armPosition.collectOut;
+                    }
+
+                    break;
+                case deliveryUp:
+                    //First move the wrist down and open the gripper
+                    this.gripperWrist.setPosition(WRIST_DOWN_POSITION);
+                    this.gripperHand.setPosition(HAND_OPEN_POSITION);
+
+                    // Move the arm up to the collect up position using the encoder
+                    this.slideArmMotor.setTargetPosition(ARM_HOME_RESET);
+
+                    // Next, determine where the arm is at so we can throttle the speed of the arm movement
+                    int degreesUntilTarget = Math.abs(this.slideArmMotor.getTargetPosition() - this.slideArmMotor.getCurrentPosition());
+
+//                if (degreesUntilTarget <= 1000) {
+//                    // Run at a slow speed
+//                    ((DcMotorEx) this.slideArmMotor).setVelocity(300);
+//                } else if (degreesUntilTarget <= 1500) {
+//                    // Run at a medium speed
+//                    ((DcMotorEx) this.slideArmMotor).setVelocity(500);
+//                } else {
+//                    //Run at full speed
+//                    ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
+//                }
+
+                    if (degreesUntilTarget <= 1500) {
+                        // Run at a medium speed
+                        ((DcMotorEx) this.slideArmMotor).setVelocity(500);
+                    } else {
+                        //Run at full speed
+                        ((DcMotorEx) this.slideArmMotor).setVelocity(3000);
+                    }
+
+                    this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                    //Next, check if the arm is at the final position
+                    if (this.isMotorAtPosition(slideArmMotor) || this.isArmFrontButtonPressed) {
+                        //Set the encoder position to the current position to hold the arm up
+                        this.slideArmMotor.setTargetPosition(this.slideArmMotor.getCurrentPosition());
+                        this.slideArmMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                        // Move the slide out the collect up position using the encoder
+                        this.slideMotor.setTargetPosition(SLIDE_COLLECT_OUT);
+                        ((DcMotorEx) this.slideMotor).setVelocity(SLIDE_COLLECT_OUT_SPEED);
+                        this.slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+                        //Next, check if the arm is at the final position
+                        if (this.isMotorAtPosition(slideMotor)) {
+                            //Success
+                            this.currentArmPosition = FreddyAutoHighBasket2Samples.armPosition.collectOut;
+                        }
+                    }
+
+                    break;
+            }
+
+
+
+        }
+
+
+
+
+
+    }
+
     //</editor-fold>
 
     //<editor-fold desc="Basket Methods ">
@@ -472,12 +618,12 @@ public class FreddyAutoHighBasket2Samples extends LinearOpMode {
             // Next, determine where the side is at so we can throttle the speed of the slide movement
             int degreesUntilTarget = Math.abs(this.slideMotor.getTargetPosition() - this.slideMotor.getCurrentPosition());
 
-            if (degreesUntilTarget <= 500) {
+            if (degreesUntilTarget <= 300) {
                 // Run at a slow speed
-                ((DcMotorEx) this.slideMotor).setVelocity(350);
-            } else if (degreesUntilTarget <= 1000) {
-                // Run at a medium speed
                 ((DcMotorEx) this.slideMotor).setVelocity(650);
+//            } else if (degreesUntilTarget <= 1000) {
+//                // Run at a medium speed
+//                ((DcMotorEx) this.slideMotor).setVelocity(650);
             } else {
                 //Run at full speed
                 ((DcMotorEx) this.slideMotor).setVelocity(2000);
@@ -502,7 +648,7 @@ public class FreddyAutoHighBasket2Samples extends LinearOpMode {
             this.gripperWrist.setPosition(WRIST_DOWN_POSITION);
 
             slideMotor.setTargetPosition(0);
-            ((DcMotorEx) slideMotor).setVelocity(1500);
+            ((DcMotorEx) slideMotor).setVelocity(2500);
             slideMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
             if (this.isMotorAtPosition(slideMotor)) {
@@ -591,7 +737,7 @@ public class FreddyAutoHighBasket2Samples extends LinearOpMode {
             //Check if the arm is fully down
             if (!this.isArmFrontButtonPressed){
                 //Move the motor down
-                this.slideArmMotor.setPower(0.1);
+                this.slideArmMotor.setPower(0.5);
             }
             else{
                 //Stop the motor
@@ -601,7 +747,7 @@ public class FreddyAutoHighBasket2Samples extends LinearOpMode {
             //Check if the slide is fully back
             if (!this.isArmSlideBackButtonPressed){
                 //Move the motor backwards
-                this.slideMotor.setPower(-0.2);
+                this.slideMotor.setPower(-0.3);
             }
             else{
                 //Stop the motor
@@ -625,7 +771,7 @@ public class FreddyAutoHighBasket2Samples extends LinearOpMode {
             SLIDE_HIGH_BASKET = 3450;
             SLIDE_HIGH_BASKET_MIN = 3300;
             SLIDE_COLLECT_OUT = 550;
-            HAND_CLOSED_POSITION = 0.64;
+            HAND_CLOSED_POSITION = 0.67;
             WRIST_DOWN_POSITION = 0.67;
         }
         else if (currentRobot == FreddyAutoHighBasket2Samples.robot.Napoleon){
