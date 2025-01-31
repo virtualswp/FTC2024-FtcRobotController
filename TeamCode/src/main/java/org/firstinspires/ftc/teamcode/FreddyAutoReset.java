@@ -58,12 +58,27 @@ public class FreddyAutoReset extends LinearOpMode {
 
     //</editor-fold>
 
+
+
+    //<editor-fold desc="Op Mode & Handlers">
+
+    private enum robot {
+        Freddy,
+
+        Napoleon,
+    }
+
+    //</editor-fold>
+
     //<editor-fold desc="Constants">
     private static final int SLIDE_LOW_BASKET = 1500;                  //The degrees the encoder needs to move the slide motor to get to the low basket
-    private static final int SLIDE_HIGH_BASKET = 2900;                  //The degrees the encoder needs to move the slide motor to get to the high basket
+    private int SLIDE_HIGH_BASKET = 2900;                  //The degrees the encoder needs to move the slide motor to get to the high basket
+
+    //freddy = 3550, napoleon = 3400
+    private int SLIDE_HIGH_BASKET_MIN = 3400;              //The minimum height the magnetic switch sensor can be valid at
 
     //Napolean = 450, Freddy = 550
-    private static final int SLIDE_COLLECT_OUT = 750;                   //The degrees the encoder needs to move the slide motor to get to the collect out position
+    private int SLIDE_COLLECT_OUT = 750;                   //The degrees the encoder needs to move the slide motor to get to the collect out position
 
     private static final int SLIDE_HOME_RESET = -100;                   // The position to move the slide motor past the home (0) position to account for any variance with the encoder
 
@@ -75,10 +90,10 @@ public class FreddyAutoReset extends LinearOpMode {
     private static final double HAND_OPEN_POSITION = 0.0;               // The servo position for the hand to be fully open.
 
     //Napoleon = 0.57, Freddy = 0.64
-    private static final double HAND_CLOSED_POSITION = 0.64;            // The servo position for the hand to be fully closed.
+    private double HAND_CLOSED_POSITION = 0.64;            // The servo position for the hand to be fully closed.
 
     // Napolean = 0.70, Freddy = 0.67
-    private static final double WRIST_DOWN_POSITION = 0.67;             // The servo position for the wrist to be fully down.
+    private double WRIST_DOWN_POSITION = 0.67;             // The servo position for the wrist to be fully down.
 
     private static final double WRIST_BACK_POSITION = 0.0;              // The servo position for the wrist to be fully back.
 
@@ -86,6 +101,7 @@ public class FreddyAutoReset extends LinearOpMode {
 
     private static final double WRIST_COLLECT_UP_POSITION = 0.5;        // The servo position for the wrist when moving to collect up position (slightly back to go over the bar)
 
+    private static final FreddyAutoReset.robot currentRobot = robot.Freddy;                   // The robot
 
     //</editor-fold>
 
@@ -95,6 +111,7 @@ public class FreddyAutoReset extends LinearOpMode {
     public void runOpMode() {
         //Configure the hardware
         this.ConfigureHardware();
+        this.ConfigureHardwareValues();
 
         /* Wait for the game driver to press play */
         waitForStart();
@@ -124,6 +141,23 @@ public class FreddyAutoReset extends LinearOpMode {
         //Set the hand gripper to an open position to start
         this.gripperHand.setPosition(HAND_CLOSED_POSITION);                //0.0 = All the way open, 1.0 is all the way closed.
         this.gripperWrist.setPosition(WRIST_BACK_POSITION);                //0.0 = All the way down, 1.0 is all the way back.
+    }
+
+    private void ConfigureHardwareValues(){
+        if (currentRobot == FreddyAutoReset.robot.Freddy) {
+            SLIDE_HIGH_BASKET = 3450;
+            SLIDE_HIGH_BASKET_MIN = 3300;
+            SLIDE_COLLECT_OUT = 550;
+            HAND_CLOSED_POSITION = 0.67;
+            WRIST_DOWN_POSITION = 0.67;
+        }
+        else if (currentRobot == FreddyAutoReset.robot.Napoleon){
+            SLIDE_HIGH_BASKET = 3450;
+            SLIDE_HIGH_BASKET_MIN = 3300;
+            SLIDE_COLLECT_OUT = 450;
+            HAND_CLOSED_POSITION = 0.60;
+            WRIST_DOWN_POSITION = 0.70;
+        }
     }
 
     private void ConfigureHardware() {

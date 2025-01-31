@@ -1083,7 +1083,7 @@ public class FreddyTeleop extends LinearOpMode {
             SLIDE_HIGH_BASKET = 3450;
             SLIDE_HIGH_BASKET_MIN = 3300;
             SLIDE_COLLECT_OUT = 450;
-            HAND_CLOSED_POSITION = 0.57;
+            HAND_CLOSED_POSITION = 0.60;
             WRIST_DOWN_POSITION = 0.70;
         }
     }
